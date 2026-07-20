@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Quiz Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body style="background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>QUIZ PLATFORM</h1>
+                <p>Sign in to your account</p>
+            </div>
+
+            <div id="error-msg" class="error-msg"></div>
+
+            <form id="login-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-input" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; height: 46px; border-radius: 8px;">Sign In</button>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account? <a href="register.html">Register</a>
+            </div>
+            <div class="auth-footer" style="margin-top: 12px;">
+                <a href="index.html">&larr; Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('quiz_user', JSON.stringify(result.user));
+                    localStorage.setItem('quiz_username', result.user.username);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorMsg.textContent = result.message;
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = 'An error occurred. Please check your connection.';
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Quiz Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <a href="index.html" class="sidebar-header" style="text-decoration: none; color: inherit; display: flex; align-items: center; cursor: pointer;">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-graduation-cap" style="font-size: 18px; color: white;"></i>
+                </div>
+                <h2>QUIZ PLATFORM</h2>
+            </a>
+            
+            <nav class="sidebar-menu">
+                <div class="menu-item" onclick="window.location.href='dashboard.html'">
+                    <i class="fa-solid fa-grip-vertical"></i>
+                    <span>Browse Quizzes</span>
+                </div>
+                <div class="menu-item active">
+                    <i class="fa-solid fa-user"></i>
+                    <span>My Profile</span>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div id="user-info" class="user-sidebar-pill">
+                    <div class="user-details-box">
+                        <div class="user-avatar-sm" id="sidebar-avatar">?</div>
+                        <div class="user-text-content">
+                            <p class="user-name-label"><span id="display-username"></span></p>
+                            <button onclick="logout()" class="logout-link">Logout</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 11px; color: #94a3b8;">
+                    &copy; 2026 Quiz Platform v2.0
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content-panel">
+            <header class="dashboard-header" style="margin-bottom: 30px;">
+                <h1 style="font-size: 2.25rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">My Profile</h1>
+                <p style="color: #64748b;">View your quiz history and performance statistics.</p>
+            </header>
+
+            <div id="profile-content">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="avatar-letter">?</div>
+                    <div class="profile-info">
+                        <h1 id="user-name">Loading...</h1>
+                        <p id="user-email">Loading...</p>
+                        <p id="member-since" style="font-size: 0.875rem; margin-top: 4px; color: #64748b;"></p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="val-total">0</span>
+                        <span class="stat-label">Total Quizzes</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="val-avg">0</span>
+                        <span class="stat-label">Average Score</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="val-high">0</span>
+                        <span class="stat-label">Highest Score</span>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div class="badges-container">
+                    <div class="badges-header">
+                        <h3>Achievements & Rewards</h3>
+                        <span class="badge-count" id="unlocked-count">0 / 6 Unlocked</span>
+                    </div>
+                    <div class="badges-grid" id="badges-list">
+                        <!-- Badges will be injected here -->
+                    </div>
+                </div>
+
+                <!-- History Table Section -->
+                <div class="table-container" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-top: 30px;">
+                    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+                        <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Quiz History</h3>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Score</th>
+                                <th>Time Taken</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-rows">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 24px; color: #64748b;">Loading your history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('quiz_user'));
+
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('display-username').textContent = user.username.charAt(0).toUpperCase() + user.username.slice(1);
+            document.getElementById('sidebar-avatar').textContent = user.username.charAt(0).toUpperCase();
+            loadProfile(user.username);
+        });
+
+        async function loadProfile(username) {
+            try {
+                const response = await fetch(`/api/get-profile?username=${username}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+
+                    // Set Profile Info
+                    document.getElementById('user-name').textContent = data.profile.username.charAt(0).toUpperCase() + data.profile.username.slice(1);
+                    document.getElementById('user-email').textContent = data.profile.email;
+                    document.getElementById('avatar-letter').textContent = data.profile.username.charAt(0).toUpperCase();
+
+                    const date = new Date(data.profile.date_created);
+                    document.getElementById('member-since').textContent = `Member since ${date.toLocaleDateString()}`;
+
+                    document.getElementById('val-total').textContent = data.stats.total_quizzes;
+                    document.getElementById('val-avg').textContent = `${data.stats.avg_score} / 5`;
+                    document.getElementById('val-high').textContent = `${data.stats.highest_score} / 5`;
+
+                    // Render Badges
+                    const badgesList = document.getElementById('badges-list');
+                    const unlockedCount = data.badges.filter(b => b.unlocked).length;
+                    document.getElementById('unlocked-count').textContent = `${unlockedCount} / ${data.badges.length} Unlocked`;
+
+                    badgesList.innerHTML = data.badges.map(b => `
+                        <div class="badge-item ${b.unlocked ? 'unlocked' : ''}">
+                            <div class="badge-icon">${b.icon}</div>
+                            <span class="badge-name">${b.name}</span>
+                            <p class="badge-desc">${b.desc}</p>
+                        </div>
+                    `).join('');
+
+                    // Set History Table
+                    const historyRows = document.getElementById('history-rows');
+                    if (data.history.length === 0) {
+                        historyRows.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 24px; color: #64748b;">No quiz history found. Start playing!</td></tr>';
+                    } else {
+                        historyRows.innerHTML = data.history.map(row => {
+                            const date = new Date(row.date_created);
+                            const displayScore = row.score;
+
+                            return `
+                                <tr>
+                                    <td style="text-transform: capitalize; font-weight: 600; color: #0f172a;">${row.category}</td>
+                                    <td>
+                                        <span class="rank-pill ${displayScore >= 4 ? 'rank-1' : displayScore >= 2 ? 'rank-2' : ''}">${displayScore} / 5</span>
+                                    </td>
+                                    <td style="color: #475569;">${row.time_taken}</td>
+                                    <td style="color: #64748b;">${date.toLocaleDateString()}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to load profile details.'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Database/Connection Error. Check console for details.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('quiz_user');
+            localStorage.removeItem('quiz_username');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+
+</html>

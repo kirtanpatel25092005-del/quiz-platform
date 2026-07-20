@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Platform | Welcome</title>
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inline Styling matching premium clean look -->
+    <style>
+        body {
+            /* Light Crisp Minimal Background matching reference site */
+            background-color: #f1f5f9;
+            background-image: radial-gradient(circle at 50% 0%, #e2e8f0 0%, transparent 70%);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        .minimal-nav {
+            padding: 30px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo-bold {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            background: #2563eb;
+            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            color: white;
+        }
+
+        .hero-simple {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 40px;
+            max-width: 800px;
+            margin: auto;
+            /* White Solid Card */
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            color: #0f172a;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-simple h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 24px;
+            line-height: 1.1;
+            letter-spacing: -2px;
+        }
+
+        .highlight {
+            color: #2563eb;
+        }
+
+        .hero-simple p {
+            font-size: 1.25rem;
+            color: #64748b;
+            margin-bottom: 48px;
+            line-height: 1.6;
+            font-weight: 400;
+            max-width: 600px;
+        }
+
+        .cta-button {
+            background: #2563eb;
+            color: white;
+            padding: 18px 56px;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            background: #1d4ed8;
+            box-shadow: 0 15px 40px -5px rgba(37, 99, 235, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .simple-footer {
+            padding: 40px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 640px) {
+            .hero-simple {
+                margin: 20px;
+                padding: 40px 20px;
+            }
+
+            .hero-simple h1 {
+                font-size: 2.8rem;
+                letter-spacing: -1px;
+            }
+            
+            .hero-simple p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="minimal-nav">
+        <a href="index.html" class="logo-bold">
+            <div class="logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+            </div>
+            QUIZ PLATFORM
+        </a>
+    </nav>
+
+    <main class="hero-simple">
+        <h1>Test Your <span class="highlight">Knowledge</span></h1>
+        <p>Challenge yourself, compete with friends, and track your true potential directly on the platform.</p>
+        <div class="hero-actions" style="display: flex; gap: 16px; justify-content: center; width: 100%;">
+            <a href="register.html" class="cta-button">Start Quiz &rarr;</a>
+        </div>
+    </main>
+
+    <footer class="simple-footer">
+        &copy; 2026 Quiz Platform v2.0
+    </footer>
+</body>
+
+</html>

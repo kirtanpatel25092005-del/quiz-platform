@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Quiz Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body style="background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>QUIZ PLATFORM</h1>
+                <p>Create your new account</p>
+            </div>
+
+            <div id="msg-box"></div>
+
+            <form id="register-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-input" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" class="form-input" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; height: 46px; border-radius: 8px;">Create Account</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a href="login.html">Sign In</a>
+            </div>
+            <div class="auth-footer" style="margin-top: 12px;">
+                <a href="index.html">&larr; Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const msgBox = document.getElementById('msg-box');
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const result = await response.json();
+
+                msgBox.style.display = 'block';
+                if (result.success) {
+                    msgBox.className = 'success-msg';
+                    msgBox.style.padding = '12px';
+                    msgBox.textContent = result.message + '. Redirecting to login...';
+                    setTimeout(() => window.location.href = 'login.html', 2000);
+                } else {
+                    msgBox.className = 'error-msg';
+                    msgBox.style.padding = '12px';
+                    msgBox.textContent = result.message;
+                }
+            } catch (err) {
+                console.error(err);
+                msgBox.textContent = 'An error occurred. Please check your connection.';
+                msgBox.style.display = 'block';
+                msgBox.className = 'error-msg';
+            }
+        });
+    </script>
+</body>
+
+</html>

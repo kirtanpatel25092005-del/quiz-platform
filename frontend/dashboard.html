@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart AI Quiz Platform | Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <!-- SIDEBAR NAVIGATION (Matching Reference Format) -->
+        <aside class="sidebar">
+            <a href="index.html" class="sidebar-header" style="text-decoration: none; color: inherit; display: flex; align-items: center; cursor: pointer;">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <h2>QUIZ PLATFORM</h2>
+            </a>
+            
+            <ul class="sidebar-menu">
+                <li class="menu-item active" id="menu-browse">
+                    <i class="fa-solid fa-grip-vertical"></i>
+                    <span>Browse Quizzes</span>
+                </li>
+                <li class="menu-item" id="menu-custom">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Create Custom AI Quiz</span>
+                </li>
+                <li class="menu-item" id="menu-leaderboard">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <span>Leaderboard</span>
+                </li>
+                <!-- Profile Link in Sidebar Menu -->
+                <li class="menu-item" id="profile-nav-item" style="display: none;" onclick="window.location.href='profile.html'">
+                    <i class="fa-solid fa-user"></i>
+                    <span>My Profile</span>
+                </li>
+                <!-- Login/Register Option in Sidebar Menu if not logged in -->
+                <li class="menu-item" id="auth-nav-item" onclick="window.location.href='login.html'">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Login / Register</span>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div id="user-info" class="user-sidebar-pill" style="display: none;">
+                    <div class="user-details-box">
+                        <div class="user-avatar-sm" id="sidebar-avatar">?</div>
+                        <div class="user-text-content">
+                            <p class="user-name-label"><span id="display-username"></span></p>
+                            <button onclick="logout()" class="logout-link">Logout</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 11px; color: #94a3b8;">
+                    &copy; 2026 Quiz Platform v2.0
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT PANEL -->
+        <main class="main-content-panel">
+            
+            <!-- VIEW 1: BROWSE QUIZZES (GRID SYSTEM MATCHING REFERENCE SCREENSHOT) -->
+            <section id="browse-view" class="view-panel active">
+                <div class="view-header">
+                    <h2>Browse Quizzes</h2>
+                    <p>Pick a category and test your expertise with 5 challenging questions.</p>
+                </div>
+                
+                <div class="quizzes-grid">
+                    
+                    <!-- HTML Quiz Card -->
+                    <div class="quiz-card">
+                        <div class="card-icon-box blue-bg">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <h3>HTML Quiz</h3>
+                        <p>Markup language structure, tags, and attributes.</p>
+                        <div class="card-divider"></div>
+                        <div class="card-footer">
+                            <span class="card-q-count">5 Questions</span>
+                            <button class="card-btn" onclick="startQuickQuiz('HTML Quiz')">START &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Quiz Card -->
+                    <div class="quiz-card">
+                        <div class="card-icon-box purple-bg">
+                            <i class="fa-solid fa-droplet"></i>
+                        </div>
+                        <h3>CSS Quiz</h3>
+                        <p>Cascading style sheets, selectors, and layout properties.</p>
+                        <div class="card-divider"></div>
+                        <div class="card-footer">
+                            <span class="card-q-count">5 Questions</span>
+                            <button class="card-btn" onclick="startQuickQuiz('CSS Quiz')">START &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- JS Quiz Card -->
+                    <div class="quiz-card">
+                        <div class="card-icon-box orange-bg">
+                            <i class="fa-solid fa-hexagon-nodes"></i>
+                        </div>
+                        <h3>JavaScript</h3>
+                        <p>Programming logic, core JS syntax, and functions.</p>
+                        <div class="card-divider"></div>
+                        <div class="card-footer">
+                            <span class="card-q-count">5 Questions</span>
+                            <button class="card-btn" onclick="startQuickQuiz('JavaScript')">START &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- Sport Quiz Card -->
+                    <div class="quiz-card">
+                        <div class="card-icon-box pink-bg">
+                            <i class="fa-solid fa-circle-dot"></i>
+                        </div>
+                        <h3>Sport Quiz</h3>
+                        <p>Football, Basketball, Tennis, and Olympic history.</p>
+                        <div class="card-divider"></div>
+                        <div class="card-footer">
+                            <span class="card-q-count">5 Questions</span>
+                            <button class="card-btn" onclick="startQuickQuiz('Sport Quiz')">START &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- General Knowledge Card -->
+                    <div class="quiz-card">
+                        <div class="card-icon-box green-bg">
+                            <i class="fa-solid fa-globe"></i>
+                        </div>
+                        <h3>General Knowledge</h3>
+                        <p>World capitals, science, art, and historical facts.</p>
+                        <div class="card-divider"></div>
+                        <div class="card-footer">
+                            <span class="card-q-count">5 Questions</span>
+                            <button class="card-btn" onclick="startQuickQuiz('General Knowledge')">START &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- Tech Quiz Card -->
+                    <div class="quiz-card">
+                        <div class="card-icon-box teal-bg">
+                            <i class="fa-solid fa-desktop"></i>
+                        </div>
+                        <h3>Tech Quiz</h3>
+                        <p>Computer hardware, software companies, and internet history.</p>
+                        <div class="card-divider"></div>
+                        <div class="card-footer">
+                            <span class="card-q-count">5 Questions</span>
+                            <button class="card-btn" onclick="startQuickQuiz('Tech Quiz')">START &rarr;</button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+            
+            <!-- VIEW 2: CREATE CUSTOM AI QUIZ (Our premium setup panel) -->
+            <section id="setup-view" class="view-panel">
+                <div class="card setup-card-full">
+                    <div class="card-header-left">
+                        <h2>Configure Your <span>AI Quiz</span></h2>
+                        <p>Customize your quiz settings or upload study documents, and Google Gemini will generate the questions.</p>
+                    </div>
+
+
+
+                    <!-- TAB CONTROLLER -->
+                    <div class="tabs-container">
+                        <button type="button" class="tab-btn active" id="tab-topic-btn">
+                            <i class="fa-solid fa-font"></i> Topic Mode
+                        </button>
+                        <button type="button" class="tab-btn" id="tab-file-btn">
+                            <i class="fa-solid fa-file-arrow-up"></i> Document Mode
+                        </button>
+                    </div>
+                    
+                    <!-- GROUP A: Topic Mode Elements -->
+                    <div id="topic-mode-group" class="mode-group">
+                        <!-- Google Gemini AI Topic Input Card -->
+                        <div class="gemini-topic-card" style="background: #f8fafc; border: 1px solid var(--card-border); padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-color); font-size: 20px;"></i>
+                                <span style="font-weight: 700; font-size: 15px; color: var(--text-main);">Google Gemini AI Quiz Generator</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Type any topic you want to learn about, and Google Gemini will generate a custom quiz for you instantly.</p>
+                            <div style="position: relative; width: 100%; margin-top: 8px;">
+                                <i class="fa-solid fa-magnifying-glass search-icon" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; pointer-events: none;"></i>
+                                <input type="text" id="topic-input" placeholder="e.g. Cricket, Indian History, Space, Python Loops..." style="width: 100%; padding: 16px 16px 16px 48px; border: 1px solid var(--card-border); border-radius: 14px; color: var(--text-main); font-family: inherit; font-size: 16px; outline: none; transition: var(--transition-smooth); background: white;">
+                            </div>
+                            
+                            <!-- Quick Tags -->
+                            <div class="quick-tags" id="tags-panel" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                                <span class="tag" data-topic="Python Programming">Python</span>
+                                <span class="tag" data-topic="Web Development (HTML/CSS/JS)">Web Dev</span>
+                                <span class="tag" data-topic="Generative AI & LLMs">Generative AI</span>
+                                <span class="tag" data-topic="General Knowledge">General Knowledge</span>
+                                <span class="tag" data-topic="Space & Astronomy">Space</span>
+                                <span class="tag" data-topic="Indian History">History</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GROUP B: Document Mode Elements -->
+                    <div id="file-mode-group" class="mode-group hidden">
+                        <div class="form-group">
+                            <label>Upload Study Material (PDF or TXT)</label>
+                            <div class="upload-wrapper" id="upload-area">
+                                <input type="file" id="file-input" accept=".pdf,.txt" class="hidden-file-input">
+                                <div class="upload-box-content">
+                                    <i class="fa-solid fa-file-pdf upload-box-icon" id="upload-icon"></i>
+                                    <span id="upload-status-text">Drag & Drop or Click to Upload PDF/TXT</span>
+                                    <span class="upload-box-subtext">AI will ask questions based only on this file's content</span>
+                                </div>
+                            </div>
+                            <div id="file-info-container" class="file-info-container hidden">
+                                <div class="file-info-details">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                    <span id="uploaded-file-name">filename.pdf</span>
+                                </div>
+                                <button id="clear-file-btn" class="clear-file-btn" title="Remove File">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings Grid -->
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label for="difficulty-select">Difficulty Level</label>
+                            <div class="select-wrapper">
+                                <i class="fa-solid fa-gauge-simple-high select-icon"></i>
+                                <select id="difficulty-select">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="count-select">Questions Count</label>
+                            <div class="select-wrapper">
+                                <i class="fa-solid fa-list-ol select-icon"></i>
+                                <select id="count-select">
+                                    <option value="3">3 Questions</option>
+                                    <option value="4">4 Questions</option>
+                                    <option value="5" selected>5 Questions</option>
+                                    <option value="10">10 Questions</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+
+                        <div class="form-group">
+                            <label for="type-select">Question Style</label>
+                            <div class="select-wrapper">
+                                <i class="fa-solid fa-circle-question select-icon"></i>
+                                <select id="type-select">
+                                    <option value="mcq" selected>MCQs (4 Options)</option>
+                                    <option value="true_false">True / False</option>
+                                    <option value="mixed">Mixed Format</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="language-select">Quiz Language</label>
+                            <div class="select-wrapper">
+                                <i class="fa-solid fa-language select-icon"></i>
+                                <select id="language-select">
+                                    <option value="English" selected>English</option>
+                                    <option value="Hindi">Hindi (हिन्दी)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="start-btn" class="btn btn-primary">
+                        <span>Generate Custom Quiz &rarr;</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- VIEW 3: LEADERBOARD VIEW -->
+            <section id="leaderboard-view" class="view-panel">
+                <div class="view-header">
+                    <h2>Leaderboard</h2>
+                    <p>Performance achievements of our top learners in the community.</p>
+                </div>
+                
+                <div class="card leaderboard-card">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Name</th>
+                                <th>Accuracy</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="top-rank">
+                                <td><i class="fa-solid fa-trophy first-place"></i> 1</td>
+                                <td>Kirtan</td>
+                                <td>100%</td>
+                                <td>5/5</td>
+                            </tr>
+                            <tr class="top-rank">
+                                <td><i class="fa-solid fa-trophy second-place"></i> 2</td>
+                                <td>Harsh</td>
+                                <td>100%</td>
+                                <td>5/5</td>
+                            </tr>
+                            <tr class="top-rank">
+                                <td><i class="fa-solid fa-trophy third-place"></i> 3</td>
+                                <td>Soham</td>
+                                <td>100%</td>
+                                <td>5/5</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>Yash</td>
+                                <td>100%</td>
+                                <td>5/5</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>Jay</td>
+                                <td>100%</td>
+                                <td>5/5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 4: LOADING SCREEN (Overlay inside main content) -->
+            <section id="loading-view" class="view-panel">
+                <div class="card loading-card">
+                    <div class="loading-content">
+                        <div class="loader">
+                            <div class="spinner"></div>
+                            <i class="fa-solid fa-brain loader-brain"></i>
+                        </div>
+                        <h2>Generating Quiz Questions...</h2>
+                        <p id="loading-message">Connecting with Google Gemini to curate custom questions for you.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 5: QUIZ PLAY VIEW -->
+            <section id="quiz-view" class="view-panel">
+                <div class="card quiz-card-full">
+                    <!-- Quiz Progress Header -->
+                    <div class="quiz-progress-bar-container">
+                        <div class="quiz-progress-bar" id="progress-bar"></div>
+                    </div>
+                    
+                    <div class="quiz-header">
+                        <span class="question-counter">Question <strong id="current-question-num">1</strong> of <span id="total-questions-num">5</span></span>
+                        <div class="timer" id="quiz-timer">
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="timer-text">30</span>s
+                        </div>
+                    </div>
+
+                    <!-- Question Text -->
+                    <h3 class="question-text" id="question-text">Loading question text here...</h3>
+
+                    <!-- Options List -->
+                    <div class="options-container" id="options-container">
+                        <!-- Dynamic option buttons go here -->
+                    </div>
+
+                    <!-- Explanation Box -->
+                    <div class="explanation-box hidden" id="explanation-box">
+                        <div class="explanation-header">
+                            <div class="explanation-title">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <h4>AI Explanation</h4>
+                            </div>
+                            <button id="tts-btn" class="tts-btn" title="Listen to Explanation">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                        <p id="explanation-text">Explanation content goes here.</p>
+                    </div>
+
+                    <!-- Quiz Footer Controls -->
+                    <div class="quiz-footer">
+                        <button id="next-btn" class="btn btn-primary hidden">
+                            <span>Next Question &rarr;</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 6: RESULT VIEW -->
+            <section id="result-view" class="view-panel">
+                <div class="card result-card-full">
+                    <div class="result-header">
+                        <div class="result-icon-container" id="result-badge-container">
+                            <i class="fa-solid fa-trophy trophy-gold"></i>
+                        </div>
+                        <h2 id="result-title">Quiz Completed!</h2>
+                        <p id="result-subtitle">Great effort! Here is your performance overview.</p>
+                    </div>
+
+                    <!-- Score Dashboard -->
+                    <div class="score-dashboard">
+                        <div class="score-card">
+                            <span class="score-label">Your Score</span>
+                            <h3 class="score-value"><span id="user-score">0</span>/<span id="total-score">5</span></h3>
+                        </div>
+                        <div class="score-card">
+                            <span class="score-label">Accuracy</span>
+                            <h3 class="score-value" id="accuracy-value">0%</h3>
+                        </div>
+                    </div>
+
+                    <!-- PDF Certificate Generation Card -->
+                    <div class="certificate-section hidden" id="certificate-section">
+                        <div class="score-card certificate-card">
+                            <i class="fa-solid fa-medal certificate-medal-icon"></i>
+                            <h3>Congratulations! 🎉</h3>
+                            <p>You scored 80% or higher and earned an Achievement Certificate.</p>
+                            
+                            <!-- Hidden certificate canvas -->
+                            <canvas id="certificate-canvas" width="2000" height="1414" class="hidden"></canvas>
+                            
+                            <div class="form-group name-input-group">
+                                <input type="text" id="cert-name-input" placeholder="Type your Full Name here...">
+                            </div>
+                            
+                            <div style="width: 100%; max-width: 280px; margin: 0 auto;">
+                                <button id="download-cert-btn" class="btn btn-primary">
+                                    <i class="fa-solid fa-download"></i>
+                                    <span>Download PDF</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review Section -->
+                    <div class="review-section">
+                        <h3>Review Answers & Explanations</h3>
+                        <div class="review-list" id="review-list">
+                            <!-- Dynamic list of questions, selected answers, and correct answers with explanations -->
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="result-actions">
+                        <button id="restart-btn" class="btn btn-secondary">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Try Another Topic</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+    </div>
+
+    <!-- jsPDF Library for PDF Certificate Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Script File -->
+    <script src="app.js?v=2.2"></script>
+</body>
+</html>
