@@ -268,6 +268,9 @@ async function startQuickQuiz(topic) {
     difficultySelect.value = 'medium';
     countSelect.value = '5';
     typeSelect.value = 'mcq';
+    if (languageSelect) {
+        languageSelect.value = 'English';
+    }
     activeMode = 'topic';
     
     // Switch to Topic view active state behind the scenes
