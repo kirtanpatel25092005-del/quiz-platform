@@ -1,6 +1,6 @@
 // Smart AI Quiz Platform - Premium Sidebar Dashboard Logic
 
-const BACKEND_URL = 'http://127.0.0.1:5000';
+const BACKEND_URL = window.location.origin;
 
 // App state
 let quizQuestions = [];
