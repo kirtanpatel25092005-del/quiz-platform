@@ -1,4 +1,4 @@
-// Smart AI Quiz Platform - Premium Sidebar Dashboard Logic
+// Smart Quiz Platform - Premium Sidebar Dashboard Logic
 
 const BACKEND_URL = window.location.origin;
 
@@ -738,7 +738,7 @@ function drawCertificate(name) {
 
     // Right: Issuer Signature
     ctx.fillStyle = '#0f172a';
-    ctx.fillText('Smart AI Quiz Platform', w * 0.7, infoY);
+    ctx.fillText('Smart Quiz Platform', w * 0.7, infoY);
     ctx.beginPath();
     ctx.moveTo(w * 0.6, lineTopY);
     ctx.lineTo(w * 0.8, lineTopY);
