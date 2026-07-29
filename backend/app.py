@@ -1031,6 +1031,9 @@ def api_register():
     if not username or not email or not password:
         return jsonify({"success": False, "message": "All fields are required."})
 
+    if not email.lower().endswith("@gmail.com"):
+        return jsonify({"success": False, "message": "Invalid Email"})
+
     db = load_data()
     if username in db["users"]:
         return jsonify({"success": False, "message": "Username already exists."})

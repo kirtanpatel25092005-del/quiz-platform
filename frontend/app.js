@@ -14,6 +14,7 @@ let selectedFile = null;
 let currentUtterance = null;
 let activeMode = 'topic'; // 'topic' or 'file'
 let quizStartTime = null;
+let quizOriginView = 'browse'; // Track where the quiz started from ('browse' or 'custom')
 
 // Sidebar Menu Elements
 const menuBrowse = document.getElementById('menu-browse');
@@ -63,6 +64,7 @@ const optionsContainer = document.getElementById('options-container');
 const explanationBox = document.getElementById('explanation-box');
 const explanationText = document.getElementById('explanation-text');
 const nextBtn = document.getElementById('next-btn');
+const prevBtn = document.getElementById('prev-btn');
 const ttsBtn = document.getElementById('tts-btn');
 
 // Result screen elements
@@ -166,7 +168,13 @@ function setupEventListeners() {
     });
 
     // Start Custom Quiz Button
-    startBtn.addEventListener('click', generateQuiz);
+    startBtn.addEventListener('click', () => {
+        quizOriginView = 'custom';
+        generateQuiz();
+    });
+
+    // Previous Question Button
+    prevBtn.addEventListener('click', handlePrevQuestion);
 
     // Next Question Button
     nextBtn.addEventListener('click', handleNextQuestion);
@@ -179,10 +187,53 @@ function setupEventListeners() {
 
     // Certificate Download Button
     downloadCertBtn.addEventListener('click', downloadCertificate);
+
+    // Confirmation Modal Actions
+    document.getElementById('confirm-cancel-btn').addEventListener('click', hideConfirmModal);
+    document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+        if (onConfirmCallback) onConfirmCallback();
+        hideConfirmModal();
+    });
+}
+
+// Premium Custom Confirmation Modal State & Helpers
+let onConfirmCallback = null;
+
+function showConfirmModal(callback) {
+    const modal = document.getElementById('confirm-modal');
+    modal.classList.remove('hidden');
+    // Force reflow
+    modal.offsetHeight;
+    modal.classList.add('active');
+    onConfirmCallback = callback;
+}
+
+function hideConfirmModal() {
+    const modal = document.getElementById('confirm-modal');
+    modal.classList.remove('active');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+    onConfirmCallback = null;
 }
 
 // Sidebar view switching helper
 function switchSidebarView(view) {
+    if (quizView.classList.contains('active')) {
+        showConfirmModal(() => {
+            clearInterval(timerInterval);
+            // Stop speaking just in case
+            stopSpeech();
+            // Proceed to the view
+            navigateToView(view);
+        });
+        return;
+    }
+    
+    navigateToView(view);
+}
+
+function navigateToView(view) {
     // Reset active class on menu items
     [menuBrowse, menuCustom, menuLeaderboard].forEach(m => m.classList.remove('active'));
     // Reset active class on view panels
@@ -202,6 +253,23 @@ function switchSidebarView(view) {
         leaderboardView.classList.add('active');
     }
 }
+
+// Exit quiz handler from quiz card
+function confirmExitQuiz() {
+    showConfirmModal(() => {
+        clearInterval(timerInterval);
+        stopSpeech();
+        
+        // Reset active sidebar menu items
+        [menuBrowse, menuCustom, menuLeaderboard].forEach(m => m.classList.remove('active'));
+        menuBrowse.classList.add('active');
+        
+        // Switch view to browse
+        [browseView, setupView, leaderboardView, loadingView, quizView, resultView].forEach(v => v.classList.remove('active'));
+        browseView.classList.add('active');
+    });
+}
+window.confirmExitQuiz = confirmExitQuiz;
 
 // Helper to switch view panels for quiz states
 function showViewPanel(viewPanel) {
@@ -272,6 +340,7 @@ async function startQuickQuiz(topic) {
         languageSelect.value = 'English';
     }
     activeMode = 'topic';
+    quizOriginView = 'browse';
     
     // Switch to Topic view active state behind the scenes
     switchMode('topic');
@@ -358,6 +427,7 @@ function loadQuestion() {
     
     explanationBox.classList.add('hidden');
     nextBtn.classList.add('hidden');
+    prevBtn.classList.add('hidden');
     
     const question = quizQuestions[currentQuestionIndex];
     currentQuestionNum.textContent = currentQuestionIndex + 1;
@@ -371,6 +441,10 @@ function loadQuestion() {
 
     // Render options
     optionsContainer.innerHTML = '';
+    
+    // Check if this question is already answered
+    const answeredState = userAnswers[currentQuestionIndex];
+
     question.options.forEach((option) => {
         const button = document.createElement('button');
         button.className = 'option-btn';
@@ -386,12 +460,41 @@ function loadQuestion() {
         button.appendChild(textSpan);
         button.appendChild(badgeSpan);
         
-        button.addEventListener('click', () => handleOptionSelection(button, option));
+        if (answeredState) {
+            button.disabled = true;
+            if (option === answeredState.selected) {
+                if (answeredState.isCorrect) {
+                    button.classList.add('correct');
+                    badgeSpan.innerHTML = '<i class="fa-solid fa-check"></i>';
+                } else {
+                    button.classList.add('wrong');
+                    badgeSpan.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                }
+            } else if (option === answeredState.correct) {
+                button.classList.add('correct');
+                badgeSpan.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+        } else {
+            button.addEventListener('click', () => handleOptionSelection(button, option));
+        }
+        
         optionsContainer.appendChild(button);
     });
 
-    // Start Timer
-    resetTimer();
+    if (answeredState) {
+        clearInterval(timerInterval);
+        timerText.textContent = '--';
+        showExplanation(answeredState.explanation);
+        showNextButton();
+    } else {
+        // Start Timer
+        resetTimer();
+    }
+
+    // Toggle Previous Button
+    if (currentQuestionIndex > 0) {
+        prevBtn.classList.remove('hidden');
+    }
 }
 
 // Timer
@@ -417,13 +520,13 @@ function handleTimeOut() {
     const question = quizQuestions[currentQuestionIndex];
     highlightCorrectOption(question.correct_answer);
     
-    userAnswers.push({
+    userAnswers[currentQuestionIndex] = {
         question: question.question,
         selected: "No Answer (Time Out)",
         correct: question.correct_answer,
         isCorrect: false,
         explanation: question.explanation
-    });
+    };
 
     showExplanation(question.explanation);
     showNextButton();
@@ -438,7 +541,6 @@ function handleOptionSelection(selectedBtn, selectedOption) {
     const isCorrect = selectedOption === question.correct_answer;
 
     if (isCorrect) {
-        score++;
         selectedBtn.classList.add('correct');
         selectedBtn.querySelector('.option-badge').innerHTML = '<i class="fa-solid fa-check"></i>';
     } else {
@@ -447,13 +549,13 @@ function handleOptionSelection(selectedBtn, selectedOption) {
         highlightCorrectOption(question.correct_answer);
     }
 
-    userAnswers.push({
+    userAnswers[currentQuestionIndex] = {
         question: question.question,
         selected: selectedOption,
         correct: question.correct_answer,
         isCorrect: isCorrect,
         explanation: question.explanation
-    });
+    };
 
     showExplanation(question.explanation);
     showNextButton();
@@ -495,6 +597,13 @@ function handleNextQuestion() {
         loadQuestion();
     } else {
         showResults();
+    }
+}
+
+function handlePrevQuestion() {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        loadQuestion();
     }
 }
 
@@ -553,10 +662,12 @@ function showResults() {
     progressBar.style.width = `100%`;
     showViewPanel(resultView);
     
-    userScore.textContent = score;
+    const finalScore = userAnswers.filter(ans => ans && ans.isCorrect).length;
+    
+    userScore.textContent = finalScore;
     totalScore.textContent = quizQuestions.length;
     
-    const accuracy = Math.round((score / quizQuestions.length) * 100);
+    const accuracy = Math.round((finalScore / quizQuestions.length) * 100);
     accuracyValue.textContent = `${accuracy}%`;
 
     // Trophy styling
@@ -582,6 +693,7 @@ function showResults() {
     // Dynamic Review List
     reviewList.innerHTML = '';
     userAnswers.forEach((ans, index) => {
+        if (!ans) return;
         const item = document.createElement('div');
         item.className = 'review-item';
         
@@ -628,7 +740,7 @@ function showResults() {
             body: JSON.stringify({
                 username: user.username,
                 category: category,
-                score: score,
+                score: finalScore,
                 time_taken: timeTaken
             })
         }).catch(err => console.error('Failed to save score:', err));

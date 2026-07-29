@@ -366,6 +366,11 @@
 
             <!-- VIEW 5: QUIZ PLAY VIEW -->
             <section id="quiz-view" class="view-panel">
+                <div style="margin-bottom: -15px;">
+                    <button class="btn-exit-top" onclick="confirmExitQuiz()">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                    </button>
+                </div>
                 <div class="card quiz-card-full">
                     <!-- Quiz Progress Header -->
                     <div class="quiz-progress-bar-container">
@@ -403,8 +408,11 @@
                     </div>
 
                     <!-- Quiz Footer Controls -->
-                    <div class="quiz-footer">
-                        <button id="next-btn" class="btn btn-primary hidden">
+                    <div class="quiz-footer" style="display: flex; gap: 16px; justify-content: space-between; width: 100%; align-items: center; margin-top: 24px;">
+                        <button id="prev-btn" class="btn btn-secondary hidden" style="width: auto; padding: 12px 24px; font-size: 0.95rem; border-radius: 10px; font-weight: 700; height: 46px;">
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><i class="fa-solid fa-arrow-left"></i> Previous</span>
+                        </button>
+                        <button id="next-btn" class="btn btn-primary hidden" style="width: auto; padding: 12px 24px; font-size: 0.95rem; border-radius: 10px; font-weight: 700; height: 46px; margin-left: auto;">
                             <span>Next Question &rarr;</span>
                         </button>
                     </div>
@@ -476,6 +484,21 @@
             </section>
         </main>
         
+    </div>
+
+    <!-- PREMIUM CUSTOM CONFIRMATION MODAL -->
+    <div id="confirm-modal" class="confirm-modal-overlay hidden">
+        <div class="confirm-modal-card">
+            <div class="confirm-modal-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3>Quit Quiz?</h3>
+            <p>Are you sure you want to exit? Your current quiz progress and score will be lost.</p>
+            <div class="confirm-modal-actions">
+                <button id="confirm-cancel-btn" class="confirm-btn cancel-btn">Cancel</button>
+                <button id="confirm-yes-btn" class="confirm-btn yes-btn">Exit Quiz</button>
+            </div>
+        </div>
     </div>
 
     <!-- jsPDF Library for PDF Certificate Download -->

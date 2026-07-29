@@ -1486,3 +1486,127 @@ select:focus {
     color: #1d4ed8;
 }
 
+.btn-exit-top {
+    background: none;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    transition: var(--transition-smooth);
+}
+
+.btn-exit-top:hover {
+    color: var(--primary-color);
+    transform: translateX(-4px);
+}
+
+/* Custom Confirmation Modal Styling */
+.confirm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.confirm-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.confirm-modal-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 32px 28px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-modal-overlay.active .confirm-modal-card {
+    transform: scale(1);
+}
+
+.confirm-modal-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--error-light);
+    color: var(--error-color);
+    font-size: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+}
+
+.confirm-modal-card h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 10px;
+}
+
+.confirm-modal-card p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.confirm-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.confirm-btn.cancel-btn {
+    background: #f1f5f9;
+    color: var(--text-muted);
+}
+
+.confirm-btn.cancel-btn:hover {
+    background: #e2e8f0;
+    color: var(--text-main);
+}
+
+.confirm-btn.yes-btn {
+    background: var(--error-color);
+    color: white;
+}
+
+.confirm-btn.yes-btn:hover {
+    background: #dc2626;
+}
+
