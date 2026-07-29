@@ -1021,6 +1021,14 @@ def save_data(data):
     except Exception as e:
         logging.error(f"Error saving database: {e}")
 
+@app.route('/api/admin-data', methods=['GET'])
+def api_admin_data():
+    secret = request.args.get("secret", "")
+    if secret != "mysecret123":
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    db = load_data()
+    return jsonify(db)
+
 @app.route('/api/register', methods=['POST'])
 def api_register():
     data = request.json or {}
