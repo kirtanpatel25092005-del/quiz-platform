@@ -514,7 +514,7 @@
         document.getElementById('auth-form').addEventListener('submit', function (e) {
             e.preventDefault();
             const inputVal = document.getElementById('secret-key-input').value.trim();
-            if (inputVal === "mysecret123") {
+            if (inputVal === "kirtan") {
                 // Redirect with secret param in url
                 window.location.search = `?secret=${encodeURIComponent(inputVal)}`;
             } else {
@@ -525,7 +525,7 @@
         // Initialize dashboard
         window.addEventListener('DOMContentLoaded', async () => {
             const secret = getQueryParam('secret');
-            if (secret === "mysecret123") {
+            if (secret === "kirtan") {
                 // Hide overlay, show dashboard
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('main-header').style.display = 'block';

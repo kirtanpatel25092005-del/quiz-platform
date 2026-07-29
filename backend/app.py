@@ -1024,7 +1024,7 @@ def save_data(data):
 @app.route('/api/admin-data', methods=['GET'])
 def api_admin_data():
     secret = request.args.get("secret", "")
-    if secret != "mysecret123":
+    if secret != "kirtan":
         return jsonify({"success": False, "message": "Unauthorized"}), 401
     db = load_data()
     return jsonify(db)
