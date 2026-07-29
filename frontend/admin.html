@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Smart Quiz Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: rgba(79, 70, 229, 0.08);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --error: #ef4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--primary);
+        }
+
+        .logo-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: var(--bg-color);
+            border-color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: white;
+        }
+
+        main {
+            flex: 1;
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            display: none; /* Hidden until authenticated */
+        }
+
+        /* Stats Cards grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.green {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-info p {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        /* Content Sections */
+        .section-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .section-title h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .section-title p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .search-input {
+            padding: 10px 16px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            outline: none;
+            width: 260px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Responsive Table styling */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            padding: 14px 24px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-transform: capitalize;
+        }
+
+        .badge-blue {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-green {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-gray {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
+        /* Password Auth Page styling */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 24px;
+        }
+
+        .auth-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+
+        .auth-box h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .auth-box p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            outline: none;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        .auth-input:focus {
+            border-color: var(--primary);
+        }
+
+        .auth-error {
+            color: var(--error);
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            padding: 48px;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Password Auth Overlay -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div class="auth-box">
+            <div class="logo-icon" style="margin: 0 auto 20px auto; width: 48px; height: 48px; font-size: 24px;">🔑</div>
+            <h2>Admin Login</h2>
+            <p>Please enter the secret password to access the database tables.</p>
+            <form id="auth-form" class="auth-form">
+                <input type="password" id="secret-key-input" class="auth-input" placeholder="Enter Secret Code" required autocomplete="off">
+                <button type="submit" class="btn btn-primary" style="height: 48px; font-size: 15px;">Unlock Database</button>
+                <div id="auth-error" class="auth-error">Incorrect Secret Code. Try again!</div>
+            </form>
+            <div style="margin-top: 24px; font-size: 13px;">
+                <a href="index.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">&larr; Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header bar -->
+    <header id="main-header" style="display: none;">
+        <div class="header-container">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <div class="logo-text">
+                    <h1>SMART QUIZ PLATFORM</h1>
+                    <p>Admin Database Control Panel</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button onclick="refreshData()" class="btn">
+                    <span>🔄</span> Refresh
+                </button>
+                <a href="index.html" class="btn">
+                    <span>🏠</span> Back to Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Stats overview grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <h3>Total Users</h3>
+                    <p id="stat-total-users">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">📝</div>
+                <div class="stat-info">
+                    <h3>Total Quizzes Played</h3>
+                    <p id="stat-total-plays">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <h2>Registered Users Database</h2>
+                    <p>Manage and view details of all signed-up accounts</p>
+                </div>
+                <input type="text" id="users-search" class="search-input" placeholder="Search users by name or email..." oninput="filterUsers()">
+            </div>
+            <div class="table-responsive">
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email Address</th>
+                            <th>Password</th>
+                            <th>Date Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <tr>
+                            <td colspan="4" class="empty-state">Loading users data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <h2>Quiz Attempt History</h2>
+                    <p>Browse recent scores, categories, and times taken by users</p>
+                </div>
+                <input type="text" id="history-search" class="search-input" placeholder="Search history by name or quiz..." oninput="filterHistory()">
+            </div>
+            <div class="table-responsive">
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Quiz Category</th>
+                            <th>Score</th>
+                            <th>Time Taken</th>
+                            <th>Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="5" class="empty-state">Loading history data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentDbData = { users: {}, history: [] };
+
+        // Parse query parameter
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Authenticate secret key
+        document.getElementById('auth-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('secret-key-input').value.trim();
+            if (inputVal === "mysecret123") {
+                // Redirect with secret param in url
+                window.location.search = `?secret=${encodeURIComponent(inputVal)}`;
+            } else {
+                document.getElementById('auth-error').style.display = 'block';
+            }
+        });
+
+        // Initialize dashboard
+        window.addEventListener('DOMContentLoaded', async () => {
+            const secret = getQueryParam('secret');
+            if (secret === "mysecret123") {
+                // Hide overlay, show dashboard
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('main-header').style.display = 'block';
+                document.getElementById('main-content').style.display = 'block';
+                
+                // Fetch data
+                await loadDashboardData(secret);
+            } else if (secret) {
+                // Secret provided but incorrect
+                document.getElementById('auth-error').style.display = 'block';
+                document.getElementById('auth-error').textContent = "Invalid Secret Key in URL.";
+            }
+        });
+
+        // Load data from Backend API
+        async function loadDashboardData(secret) {
+            try {
+                const response = await fetch(`/api/admin-data?secret=${encodeURIComponent(secret)}`);
+                if (!response.ok) {
+                    throw new Error("Unauthorized access or server error");
+                }
+                const data = await response.json();
+                currentDbData = data;
+                
+                renderDashboard(data);
+            } catch (err) {
+                console.error(err);
+                alert("Failed to load data. Please ensure the secret key is correct and server is running.");
+            }
+        }
+
+        // Render dashboard elements
+        function renderDashboard(data) {
+            const users = data.users || {};
+            const history = data.history || [];
+
+            // Stats
+            const totalUsers = Object.keys(users).length;
+            const totalPlays = history.length;
+            document.getElementById('stat-total-users').textContent = totalUsers;
+            document.getElementById('stat-total-plays').textContent = totalPlays;
+
+            // Render Users Table
+            renderUsersTable(users);
+
+            // Render History Table
+            renderHistoryTable(history);
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = '';
+            
+            const userList = Object.values(users);
+            if (userList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No users registered yet.</td></tr>`;
+                return;
+            }
+
+            // Sort by date_created descending if possible
+            userList.sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0));
+
+            userList.forEach(user => {
+                const tr = document.createElement('tr');
+                
+                // Format Date
+                let dateStr = "N/A";
+                if (user.date_created) {
+                    const d = new Date(user.date_created);
+                    dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                tr.innerHTML = `
+                    <td style="font-weight: 600; color: var(--primary);">${escapeHtml(user.username)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td><span style="font-family: monospace; background-color: #f1f5f9; border-radius: 4px; padding: 4px 8px; border: 1px solid var(--border);">${escapeHtml(user.password)}</span></td>
+                    <td><span class="badge badge-gray">${dateStr}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderHistoryTable(history) {
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
+
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No quiz logs available yet.</td></tr>`;
+                return;
+            }
+
+            // Sort history by date_created descending
+            const historyList = [...history];
+            historyList.sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0));
+
+            historyList.forEach(item => {
+                const tr = document.createElement('tr');
+
+                // Format Date
+                let dateStr = "N/A";
+                if (item.date_created) {
+                    const d = new Date(item.date_created);
+                    dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                const scorePercent = item.total_questions ? (item.score / item.total_questions) * 100 : 0;
+                let scoreBadgeClass = 'badge-gray';
+                if (scorePercent >= 80) scoreBadgeClass = 'badge-green';
+                else if (scorePercent >= 40) scoreBadgeClass = 'badge-blue';
+
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">${escapeHtml(item.username)}</td>
+                    <td style="font-weight: 500;">${escapeHtml(item.category)}</td>
+                    <td><span class="badge ${scoreBadgeClass}">${item.score}/${item.total_questions || 5}</span></td>
+                    <td>⏱️ ${escapeHtml(item.time_taken || '0:00')}</td>
+                    <td><span class="badge badge-gray">${dateStr}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Search / Filters
+        function filterUsers() {
+            const query = document.getElementById('users-search').value.toLowerCase().trim();
+            const filteredUsers = {};
+            
+            Object.keys(currentDbData.users).forEach(key => {
+                const user = currentDbData.users[key];
+                if (user.username.toLowerCase().includes(query) || user.email.toLowerCase().includes(query)) {
+                    filteredUsers[key] = user;
+                }
+            });
+            renderUsersTable(filteredUsers);
+        }
+
+        function filterHistory() {
+            const query = document.getElementById('history-search').value.toLowerCase().trim();
+            const filteredHistory = currentDbData.history.filter(item => 
+                item.username.toLowerCase().includes(query) || 
+                item.category.toLowerCase().includes(query)
+            );
+            renderHistoryTable(filteredHistory);
+        }
+
+        // Refresh action
+        async function refreshData() {
+            const secret = getQueryParam('secret');
+            if (secret) {
+                await loadDashboardData(secret);
+            }
+        }
+
+        // Utility to escape HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+
+</html>
