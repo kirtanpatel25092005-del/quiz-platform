@@ -14,23 +14,33 @@
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <a href="index.html" class="sidebar-header" style="text-decoration: none; color: inherit; display: flex; align-items: center; cursor: pointer;">
+            <a href="dashboard.html" class="sidebar-header" style="text-decoration: none; color: inherit; display: flex; align-items: center; cursor: pointer;">
                 <div class="logo-icon">
-                    <i class="fa-solid fa-graduation-cap" style="font-size: 18px; color: white;"></i>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
                 </div>
                 <h2>SMART QUIZ PLATFORM</h2>
             </a>
             
-            <nav class="sidebar-menu">
-                <div class="menu-item" onclick="window.location.href='dashboard.html'">
+            <ul class="sidebar-menu">
+                <li class="menu-item" onclick="window.location.href='dashboard.html?view=browse'">
                     <i class="fa-solid fa-grip-vertical"></i>
                     <span>Browse Quizzes</span>
-                </div>
-                <div class="menu-item active">
+                </li>
+                <li class="menu-item" onclick="window.location.href='dashboard.html?view=custom'">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Create Custom AI Quiz</span>
+                </li>
+                <li class="menu-item" onclick="window.location.href='dashboard.html?view=leaderboard'">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <span>Leaderboard</span>
+                </li>
+                <li class="menu-item active" onclick="window.location.href='profile.html'">
                     <i class="fa-solid fa-user"></i>
                     <span>My Profile</span>
-                </div>
-            </nav>
+                </li>
+            </ul>
             
             <div class="sidebar-footer">
                 <div id="user-info" class="user-sidebar-pill">

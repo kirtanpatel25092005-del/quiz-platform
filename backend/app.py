@@ -1127,6 +1127,7 @@ def api_save_score():
     username = data.get("username", "").strip().lower()
     category = data.get("category", "").strip()
     score = int(data.get("score", 0))
+    total_questions = int(data.get("total_questions", 5))
     time_taken = data.get("time_taken", "0:00")
 
     if not username:
@@ -1141,11 +1142,62 @@ def api_save_score():
         "username": username,
         "category": category,
         "score": score,
+        "total_questions": total_questions,
         "time_taken": time_taken,
         "date_created": datetime.datetime.utcnow().isoformat() + "Z"
     })
     save_data(db)
     return jsonify({"success": True, "message": "Score saved successfully!"})
+
+@app.route('/api/leaderboard', methods=['GET'])
+def api_leaderboard():
+    db = load_data()
+    history = db.get("history", [])
+    
+    def parse_time_to_seconds(time_str):
+        try:
+            parts = time_str.split(':')
+            if len(parts) == 2:
+                return int(parts[0]) * 60 + int(parts[1])
+            return 999999
+        except:
+            return 999999
+            
+    # Keep only the best score per user (highest score, tiebreaker faster time)
+    user_best = {}
+    for h in history:
+        user = h.get("username")
+        if not user:
+            continue
+        score = int(h.get("score", 0))
+        total = int(h.get("total_questions", 5))
+        time_sec = parse_time_to_seconds(h.get("time_taken", "0:00"))
+        
+        if user not in user_best:
+            user_best[user] = h
+        else:
+            best_score = int(user_best[user].get("score", 0))
+            best_total = int(user_best[user].get("total_questions", 5))
+            best_time_sec = parse_time_to_seconds(user_best[user].get("time_taken", "0:00"))
+            # Compare by percentage for fairness
+            if score / max(total, 1) > best_score / max(best_total, 1):
+                user_best[user] = h
+            elif score / max(total, 1) == best_score / max(best_total, 1) and time_sec < best_time_sec:
+                user_best[user] = h
+
+    # Sort by percentage descending, then time ascending
+    sorted_candidates = sorted(
+        user_best.values(), 
+        key=lambda h: (-(int(h.get("score", 0)) / max(int(h.get("total_questions", 5)), 1)), parse_time_to_seconds(h.get("time_taken", "0:00")), h.get("date_created", ""))
+    )
+    
+    # Return top 10
+    top_attempts = sorted_candidates[:10]
+    
+    return jsonify({
+        "success": True,
+        "leaderboard": top_attempts
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))

@@ -86,6 +86,13 @@ const certCanvas = document.getElementById('certificate-canvas');
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     checkAuth();
+    
+    // Route to correct view if query param exists
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view');
+    if (view) {
+        navigateToView(view);
+    }
 });
 
 // Auth Check on load
@@ -194,6 +201,18 @@ function setupEventListeners() {
         if (onConfirmCallback) onConfirmCallback();
         hideConfirmModal();
     });
+
+    // Alert Modal Actions
+    document.getElementById('alert-ok-btn').addEventListener('click', hideAlertModal);
+
+    // Auth Wall Modal Actions
+    document.getElementById('auth-wall-login-btn').addEventListener('click', () => {
+        window.location.href = 'login.html';
+    });
+    document.getElementById('auth-wall-register-btn').addEventListener('click', () => {
+        window.location.href = 'register.html';
+    });
+    document.getElementById('auth-wall-cancel-btn').addEventListener('click', hideAuthWall);
 }
 
 // Premium Custom Confirmation Modal State & Helpers
@@ -215,6 +234,46 @@ function hideConfirmModal() {
         modal.classList.add('hidden');
     }, 300);
     onConfirmCallback = null;
+}
+
+// Alert Modal Helpers
+function showAlert(message, title = "Attention") {
+    const modal = document.getElementById('alert-modal');
+    document.getElementById('alert-modal-title').textContent = title;
+    document.getElementById('alert-modal-message').textContent = message;
+    modal.classList.remove('hidden');
+    // Force reflow
+    modal.offsetHeight;
+    modal.classList.add('active');
+}
+
+function hideAlertModal() {
+    const modal = document.getElementById('alert-modal');
+    modal.classList.remove('active');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+// Auth Wall (Login Required) Modal
+function requireLogin() {
+    const user = JSON.parse(localStorage.getItem('quiz_user'));
+    if (user && user.username) return true; // logged in
+    showAuthWall();
+    return false;
+}
+
+function showAuthWall() {
+    const modal = document.getElementById('auth-wall-modal');
+    modal.classList.remove('hidden');
+    modal.offsetHeight; // force reflow
+    modal.classList.add('active');
+}
+
+function hideAuthWall() {
+    const modal = document.getElementById('auth-wall-modal');
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
 // Sidebar view switching helper
@@ -251,6 +310,65 @@ function navigateToView(view) {
     } else if (view === 'leaderboard') {
         menuLeaderboard.classList.add('active');
         leaderboardView.classList.add('active');
+        loadLeaderboard();
+    }
+}
+
+async function loadLeaderboard() {
+    const rowsContainer = document.getElementById('leaderboard-rows');
+    if (!rowsContainer) return;
+    
+    try {
+        const response = await fetch('/api/leaderboard');
+        const data = await response.json();
+        
+        if (data.success && data.leaderboard) {
+            if (data.leaderboard.length === 0) {
+                rowsContainer.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">No quiz data yet. Be the first to appear on the leaderboard!</td></tr>';
+                return;
+            }
+            
+            rowsContainer.innerHTML = data.leaderboard.map((item, index) => {
+                const rank = index + 1;
+                let rankCell = '';
+                let rowClass = '';
+                
+                if (rank === 1) {
+                    rankCell = `<td><i class="fa-solid fa-trophy first-place"></i> 1</td>`;
+                    rowClass = 'class="top-rank"';
+                } else if (rank === 2) {
+                    rankCell = `<td><i class="fa-solid fa-trophy second-place"></i> 2</td>`;
+                    rowClass = 'class="top-rank"';
+                } else if (rank === 3) {
+                    rankCell = `<td><i class="fa-solid fa-trophy third-place"></i> 3</td>`;
+                    rowClass = 'class="top-rank"';
+                } else {
+                    rankCell = `<td>${rank}</td>`;
+                }
+                
+                const capitalizedUser = item.username.charAt(0).toUpperCase() + item.username.slice(1);
+                const displayScore = item.score;
+                const totalQ = item.total_questions || 5;
+                const percentage = Math.round((displayScore / totalQ) * 100);
+                const badgeClass = percentage >= 80 ? 'rank-1' : percentage >= 40 ? 'rank-2' : '';
+                
+                return `
+                    <tr ${rowClass}>
+                        ${rankCell}
+                        <td style="font-weight: 600; color: #0f172a;">${capitalizedUser}</td>
+                        <td style="text-transform: capitalize;">${item.category}</td>
+                        <td style="font-weight: 700; color: ${percentage >= 80 ? '#16a34a' : percentage >= 40 ? '#d97706' : '#dc2626'}; font-size: 1.05rem;">${percentage}%</td>
+                        <td><span class="rank-pill ${badgeClass}">${displayScore} / ${totalQ}</span></td>
+                        <td>${item.time_taken}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            rowsContainer.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: #ef4444;">Failed to load leaderboard.</td></tr>';
+        }
+    } catch (err) {
+        console.error('Error fetching leaderboard:', err);
+        rowsContainer.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: #ef4444;">Error loading leaderboard.</td></tr>';
     }
 }
 
@@ -260,13 +378,13 @@ function confirmExitQuiz() {
         clearInterval(timerInterval);
         stopSpeech();
         
-        // Reset active sidebar menu items
-        [menuBrowse, menuCustom, menuLeaderboard].forEach(m => m.classList.remove('active'));
-        menuBrowse.classList.add('active');
-        
-        // Switch view to browse
-        [browseView, setupView, leaderboardView, loadingView, quizView, resultView].forEach(v => v.classList.remove('active'));
-        browseView.classList.add('active');
+        if (menuCustom.classList.contains('active')) {
+            navigateToView('custom');
+        } else if (menuLeaderboard.classList.contains('active')) {
+            navigateToView('leaderboard');
+        } else {
+            navigateToView('browse');
+        }
     });
 }
 window.confirmExitQuiz = confirmExitQuiz;
@@ -331,6 +449,9 @@ function resetFileUploader() {
 
 // Quick Quiz Start from Browse Grid Category Cards
 async function startQuickQuiz(topic) {
+    // Guard: must be logged in
+    if (!requireLogin()) return;
+
     // Configure default quiz parameters
     topicInput.value = topic;
     difficultySelect.value = 'medium';
@@ -353,6 +474,9 @@ window.startQuickQuiz = startQuickQuiz;
 
 // Generate Quiz FormData Call
 async function generateQuiz() {
+    // Guard: must be logged in
+    if (!requireLogin()) return;
+
     const topic = topicInput.value.trim();
     const difficulty = difficultySelect.value;
     const count = parseInt(countSelect.value);
@@ -361,12 +485,12 @@ async function generateQuiz() {
 
     // Mode-specific validation
     if (activeMode === 'topic' && !topic) {
-        alert('Please enter or select a topic to begin.');
+        showAlert('Please enter or select a topic to begin.', 'Topic Required');
         return;
     }
     
     if (activeMode === 'file' && !selectedFile) {
-        alert('Please upload a study document (PDF/TXT) to begin.');
+        showAlert('Please upload a study document (PDF/TXT) to begin.', 'Document Required');
         return;
     }
 
@@ -400,12 +524,13 @@ async function generateQuiz() {
             totalQuestionsNum.textContent = quizQuestions.length;
             startQuizPlay();
         } else {
-            alert('Failed to generate quiz. Please check backend logs.');
+            console.error('Quiz Generation Error:', data);
+            showAlert('Failed to generate quiz. Please check backend logs.', 'Generation Failed');
             showViewPanel(setupView);
         }
-    } catch (error) {
-        console.error('Error generating quiz:', error);
-        alert('Could not connect to the backend server. Make sure Flask app.py is running!');
+    } catch (err) {
+        console.error('Fetch error:', err);
+        showAlert('Could not connect to the backend server. Make sure Flask app.py is running!', 'Connection Error');
         showViewPanel(setupView);
     }
 }
@@ -741,6 +866,7 @@ function showResults() {
                 username: user.username,
                 category: category,
                 score: finalScore,
+                total_questions: quizQuestions.length,
                 time_taken: timeTaken
             })
         }).catch(err => console.error('Failed to save score:', err));
@@ -911,9 +1037,12 @@ function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
 
 // Download Certificate PDF
 function downloadCertificate() {
-    let name = certNameInput.value.trim();
+    const nameInput = document.getElementById('cert-name-input');
+    const name = nameInput.value.trim();
+    
     if (!name) {
-        alert('Please type your name first.');
+        showAlert('Please type your name first.', 'Name Required');
+        nameInput.focus();
         return;
     }
     
@@ -946,7 +1075,14 @@ function resetQuiz() {
     score = 0;
     userAnswers = [];
     resetFileUploader();
-    switchSidebarView('browse'); // Return to Browse view
+    
+    if (menuCustom.classList.contains('active')) {
+        navigateToView('custom');
+    } else if (menuLeaderboard.classList.contains('active')) {
+        navigateToView('leaderboard');
+    } else {
+        navigateToView('browse');
+    }
 }
 
 // HTML Escaping Helper to prevent tag rendering issues

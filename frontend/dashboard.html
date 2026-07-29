@@ -19,7 +19,7 @@
         
         <!-- SIDEBAR NAVIGATION (Matching Reference Format) -->
         <aside class="sidebar">
-            <a href="index.html" class="sidebar-header" style="text-decoration: none; color: inherit; display: flex; align-items: center; cursor: pointer;">
+            <a href="dashboard.html" class="sidebar-header" style="text-decoration: none; color: inherit; display: flex; align-items: center; cursor: pointer;">
                 <div class="logo-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -173,7 +173,7 @@
                 <div class="card setup-card-full">
                     <div class="card-header-left">
                         <h2>Configure Your <span>AI Quiz</span></h2>
-                        <p>Customize your quiz settings or upload study documents, and Google Gemini will generate the questions.</p>
+                        <p>Customize your quiz settings or upload study documents, and Groq's fast AI will generate the questions.</p>
                     </div>
 
 
@@ -190,13 +190,13 @@
                     
                     <!-- GROUP A: Topic Mode Elements -->
                     <div id="topic-mode-group" class="mode-group">
-                        <!-- Google Gemini AI Topic Input Card -->
+                        <!-- Groq AI Topic Input Card -->
                         <div class="gemini-topic-card" style="background: #f8fafc; border: 1px solid var(--card-border); padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-color); font-size: 20px;"></i>
-                                <span style="font-weight: 700; font-size: 15px; color: var(--text-main);">Google Gemini AI Quiz Generator</span>
+                                <span style="font-weight: 700; font-size: 15px; color: var(--text-main);">Groq AI Quiz Generator</span>
                             </div>
-                            <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Type any topic you want to learn about, and Google Gemini will generate a custom quiz for you instantly.</p>
+                            <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">Type any topic you want to learn about, and Groq's lightning-fast AI will generate a custom quiz for you instantly.</p>
                             <div style="position: relative; width: 100%; margin-top: 8px;">
                                 <i class="fa-solid fa-magnifying-glass search-icon" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; pointer-events: none;"></i>
                                 <input type="text" id="topic-input" placeholder="e.g. Cricket, Indian History, Space, Python Loops..." style="width: 100%; padding: 16px 16px 16px 48px; border: 1px solid var(--card-border); border-radius: 14px; color: var(--text-main); font-family: inherit; font-size: 16px; outline: none; transition: var(--transition-smooth); background: white;">
@@ -310,40 +310,15 @@
                             <tr>
                                 <th>Rank</th>
                                 <th>Name</th>
-                                <th>Accuracy</th>
+                                <th>Quiz Topic</th>
+                                <th>Accuracy ↓</th>
                                 <th>Score</th>
+                                <th>Time Taken</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr class="top-rank">
-                                <td><i class="fa-solid fa-trophy first-place"></i> 1</td>
-                                <td>Kirtan</td>
-                                <td>100%</td>
-                                <td>5/5</td>
-                            </tr>
-                            <tr class="top-rank">
-                                <td><i class="fa-solid fa-trophy second-place"></i> 2</td>
-                                <td>Harsh</td>
-                                <td>100%</td>
-                                <td>5/5</td>
-                            </tr>
-                            <tr class="top-rank">
-                                <td><i class="fa-solid fa-trophy third-place"></i> 3</td>
-                                <td>Soham</td>
-                                <td>100%</td>
-                                <td>5/5</td>
-                            </tr>
+                        <tbody id="leaderboard-rows">
                             <tr>
-                                <td>4</td>
-                                <td>Yash</td>
-                                <td>100%</td>
-                                <td>5/5</td>
-                            </tr>
-                            <tr>
-                                <td>5</td>
-                                <td>Jay</td>
-                                <td>100%</td>
-                                <td>5/5</td>
+                                <td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">Loading leaderboard...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -359,7 +334,7 @@
                             <i class="fa-solid fa-brain loader-brain"></i>
                         </div>
                         <h2>Generating Quiz Questions...</h2>
-                        <p id="loading-message">Connecting with Google Gemini to curate custom questions for you.</p>
+                        <p id="loading-message">Connecting with Groq AI to curate custom questions for you.</p>
                     </div>
                 </div>
             </section>
@@ -497,6 +472,42 @@
             <div class="confirm-modal-actions">
                 <button id="confirm-cancel-btn" class="confirm-btn cancel-btn">Cancel</button>
                 <button id="confirm-yes-btn" class="confirm-btn yes-btn">Exit Quiz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM CUSTOM ALERT MODAL -->
+    <div id="alert-modal" class="confirm-modal-overlay hidden">
+        <div class="confirm-modal-card">
+            <div class="confirm-modal-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <h3 id="alert-modal-title">Attention</h3>
+            <p id="alert-modal-message">Please enter or select a topic to begin.</p>
+            <div class="confirm-modal-actions" style="justify-content: center;">
+                <button id="alert-ok-btn" class="confirm-btn yes-btn" style="background: var(--primary-color); border-color: var(--primary-color); padding: 12px 32px;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN REQUIRED MODAL -->
+    <div id="auth-wall-modal" class="confirm-modal-overlay hidden">
+        <div class="confirm-modal-card" style="max-width: 400px;">
+            <div class="confirm-modal-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-size: 2rem;">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 style="color: #0f172a;">Login Required</h3>
+            <p style="color: #64748b;">You need to be logged in to start a quiz and track your progress.</p>
+            <div class="confirm-modal-actions" style="flex-direction: column; gap: 10px;">
+                <button id="auth-wall-login-btn" class="confirm-btn yes-btn" style="background: #2563eb; border-color: #2563eb; width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-right-to-bracket"></i>&nbsp; Login
+                </button>
+                <button id="auth-wall-register-btn" class="confirm-btn cancel-btn" style="width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-user-plus"></i>&nbsp; Create an Account
+                </button>
+                <button id="auth-wall-cancel-btn" class="confirm-btn cancel-btn" style="width: 100%; justify-content: center; border: none; color: #94a3b8; background: transparent;">
+                    Maybe Later
+                </button>
             </div>
         </div>
     </div>
