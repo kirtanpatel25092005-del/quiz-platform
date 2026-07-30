@@ -1005,13 +1005,69 @@ def save_key():
 # User Auth and Profile Database APIs
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
 
+def cleanup_old_data(data):
+    import datetime
+    changed = False
+    now = datetime.datetime.utcnow()
+    ten_days_ago = now - datetime.timedelta(days=10)
+
+    # 1. Clean up users
+    users = data.get("users", {})
+    new_users = {}
+    for username, user_info in users.items():
+        date_str = user_info.get("date_created")
+        keep = True
+        if date_str:
+            try:
+                # Parse date string, replacing Z with +00:00 for fromisoformat compatibility
+                dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                if dt.tzinfo is not None:
+                    dt = dt.replace(tzinfo=None)
+                if dt < ten_days_ago:
+                    keep = False
+                    changed = True
+            except Exception as e:
+                logging.error(f"Error parsing date_created for user {username}: {e}")
+        if keep:
+            new_users[username] = user_info
+    
+    # 2. Clean up history
+    history = data.get("history", [])
+    new_history = []
+    for item in history:
+        date_str = item.get("date_created")
+        keep = True
+        if date_str:
+            try:
+                dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                if dt.tzinfo is not None:
+                    dt = dt.replace(tzinfo=None)
+                if dt < ten_days_ago:
+                    keep = False
+                    changed = True
+            except Exception as e:
+                logging.error(f"Error parsing date_created for history item: {e}")
+        if keep:
+            new_history.append(item)
+            
+    if changed:
+        data["users"] = new_users
+        data["history"] = new_history
+        
+    return data, changed
+
 def load_data():
     if not os.path.exists(DATA_FILE):
         return {"users": {}, "history": []}
     try:
         with open(DATA_FILE, 'r') as f:
-            return json.load(f)
-    except:
+            data = json.load(f)
+        cleaned_data, changed = cleanup_old_data(data)
+        if changed:
+            save_data(cleaned_data)
+        return cleaned_data
+    except Exception as e:
+        logging.error(f"Error loading database: {e}")
         return {"users": {}, "history": []}
 
 def save_data(data):
@@ -1041,6 +1097,9 @@ def api_register():
 
     if not email.lower().endswith("@gmail.com"):
         return jsonify({"success": False, "message": "Invalid Email"})
+
+    if len(password) < 6:
+        return jsonify({"success": False, "message": "Password must be at least 6 characters long."})
 
     db = load_data()
     if username in db["users"]:
