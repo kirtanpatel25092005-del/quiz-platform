@@ -1002,6 +1002,25 @@ def save_key():
             "message": f"Failed to configure API key: {str(e)}"
         })
 
+# Configure MongoDB Cloud Database
+MONGO_URI = os.getenv("MONGO_URI", "").strip()
+mongo_client = None
+mongo_db = None
+is_mongo_active = False
+
+if MONGO_URI:
+    try:
+        from pymongo import MongoClient
+        mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        # Verify connection
+        mongo_client.admin.command('ping')
+        mongo_db = mongo_client['quiz_platform']
+        is_mongo_active = True
+        logging.info("Successfully connected to MongoDB Cloud Database!")
+    except Exception as e:
+        logging.error(f"Failed to connect to MongoDB Cloud Database: {e}. Falling back to local data.json.")
+        is_mongo_active = False
+
 # User Auth and Profile Database APIs
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
 
@@ -1019,7 +1038,6 @@ def cleanup_old_data(data):
         keep = True
         if date_str:
             try:
-                # Parse date string, replacing Z with +00:00 for fromisoformat compatibility
                 dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
                 if dt.tzinfo is not None:
                     dt = dt.replace(tzinfo=None)
@@ -1057,6 +1075,25 @@ def cleanup_old_data(data):
     return data, changed
 
 def load_data():
+    if is_mongo_active and mongo_db is not None:
+        try:
+            users_doc = mongo_db.users.find({}, {'_id': 0})
+            users_dict = {}
+            for u in users_doc:
+                if "username" in u:
+                    users_dict[u["username"]] = u
+
+            history_doc = list(mongo_db.history.find({}, {'_id': 0}).sort("date_created", -1))
+            
+            data = {"users": users_dict, "history": history_doc}
+            cleaned_data, changed = cleanup_old_data(data)
+            if changed:
+                save_data(cleaned_data)
+            return cleaned_data
+        except Exception as e:
+            logging.error(f"Error loading data from MongoDB: {e}")
+
+    # Fallback to JSON file
     if not os.path.exists(DATA_FILE):
         return {"users": {}, "history": []}
     try:
@@ -1067,15 +1104,35 @@ def load_data():
             save_data(cleaned_data)
         return cleaned_data
     except Exception as e:
-        logging.error(f"Error loading database: {e}")
+        logging.error(f"Error loading database file: {e}")
         return {"users": {}, "history": []}
 
 def save_data(data):
+    if is_mongo_active and mongo_db is not None:
+        try:
+            # Sync users to MongoDB
+            for username, user_info in data.get("users", {}).items():
+                mongo_db.users.update_one(
+                    {"username": username},
+                    {"$set": user_info},
+                    upsert=True
+                )
+            
+            # Sync history items (remove deleted, insert new)
+            mongo_db.history.delete_many({})
+            if data.get("history"):
+                mongo_db.history.insert_many(data.get("history"))
+            return
+        except Exception as e:
+            logging.error(f"Error saving data to MongoDB: {e}")
+
+    # Local file save
     try:
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f, indent=4)
     except Exception as e:
-        logging.error(f"Error saving database: {e}")
+        logging.error(f"Error saving database file: {e}")
+
 
 @app.route('/api/admin-data', methods=['GET'])
 def api_admin_data():
