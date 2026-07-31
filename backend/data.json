@@ -5,11 +5,17 @@
             "email": "kk@gmail.com",
             "password": "ghn",
             "date_created": "2026-07-29T10:01:14.016768Z"
+        },
+        "gevariya": {
+            "username": "gevariya",
+            "email": "gevariya111@gmail.com",
+            "password": "gevariya",
+            "date_created": "2026-07-31T12:52:22.739794Z"
         }
     },
     "history": [
         {
-            "username": "k",
+            "username": "kirtan patel",
             "category": "HTML Quiz",
             "score": 2,
             "total_questions": 5,
