@@ -31,6 +31,7 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" class="form-input" placeholder="Enter your password" minlength="6" required>
+                    <small style="color: #64748b; font-size: 0.78rem; margin-top: 4px; display: block;">Must contain at least 6 characters, a capital letter, a number & a symbol.</small>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; height: 46px; border-radius: 8px;">Create Account</button>
             </form>
@@ -65,6 +66,30 @@
                 msgBox.className = 'error-msg';
                 msgBox.style.padding = '12px';
                 msgBox.textContent = 'Password must be at least 6 characters long.';
+                return;
+            }
+
+            if (!/[A-Z]/.test(password)) {
+                msgBox.style.display = 'block';
+                msgBox.className = 'error-msg';
+                msgBox.style.padding = '12px';
+                msgBox.textContent = 'Password must contain at least 1 capital letter.';
+                return;
+            }
+
+            if (!/[0-9]/.test(password)) {
+                msgBox.style.display = 'block';
+                msgBox.className = 'error-msg';
+                msgBox.style.padding = '12px';
+                msgBox.textContent = 'Password must contain at least 1 number.';
+                return;
+            }
+
+            if (!/[^A-Za-z0-9]/.test(password)) {
+                msgBox.style.display = 'block';
+                msgBox.className = 'error-msg';
+                msgBox.style.padding = '12px';
+                msgBox.textContent = 'Password must contain at least 1 symbol (e.g. @, #, $, !).';
                 return;
             }
 

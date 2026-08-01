@@ -16,3 +16,7 @@ Cortex/
 # Python cache
 __pycache__/
 *.pyc
+
+# Zip archives
+*.zip
+

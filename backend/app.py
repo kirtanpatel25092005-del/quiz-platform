@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -1157,6 +1158,15 @@ def api_register():
 
     if len(password) < 6:
         return jsonify({"success": False, "message": "Password must be at least 6 characters long."})
+
+    if not re.search(r'[A-Z]', password):
+        return jsonify({"success": False, "message": "Password must contain at least one capital letter."})
+
+    if not re.search(r'[0-9]', password):
+        return jsonify({"success": False, "message": "Password must contain at least one number."})
+
+    if not re.search(r'[^A-Za-z0-9]', password):
+        return jsonify({"success": False, "message": "Password must contain at least one symbol (e.g. @, #, $, !)."})
 
     db = load_data()
     if username in db["users"]:
