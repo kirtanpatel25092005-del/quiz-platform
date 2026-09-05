@@ -705,42 +705,44 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
         - The quiz topic is: "{topic}".
         """
 
-    payload = {
-        "model": "llama-3.1-8b-instant",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "response_format": {"type": "json_object"},
-        "temperature": 0.3,
-        "max_tokens": 4096
-    }
-    
+    models_to_try = ["qwen/qwen3.6-27b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-8b-8192"]
     import urllib.request
     import urllib.error
     import json
-    
-    try:
-        req = urllib.request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=json.dumps(payload).encode('utf-8'),
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY.strip()}",
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=30) as response:
-            res_data = json.loads(response.read().decode('utf-8'))
-            content = res_data['choices'][0]['message']['content'].strip()
-            quiz_data = json.loads(content)
-            if isinstance(quiz_data, dict) and "questions" in quiz_data:
-                return quiz_data["questions"]
-            elif isinstance(quiz_data, list):
-                return quiz_data
-    except Exception as e:
-        logging.error(f"Error during Groq quiz generation: {e}")
-        
+
+    for model in models_to_try:
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.3,
+            "max_tokens": 4096
+        }
+        try:
+            req = urllib.request.Request(
+                "https://api.groq.com/openai/v1/chat/completions",
+                data=json.dumps(payload).encode('utf-8'),
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY.strip()}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                content = res_data['choices'][0]['message']['content'].strip()
+                quiz_data = json.loads(content)
+                if isinstance(quiz_data, dict) and "questions" in quiz_data:
+                    return quiz_data["questions"]
+                elif isinstance(quiz_data, list):
+                    return quiz_data
+        except Exception as e:
+            logging.warning(f"Groq generation failed with model {model}: {e}")
+            continue
+            
     return None
 
 @app.route('/api/status', methods=['GET'])
