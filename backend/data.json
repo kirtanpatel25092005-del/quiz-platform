@@ -16,6 +16,22 @@
     "history": [
         {
             "username": "kirtan patel",
+            "category": "Groq AI Quiz Generator",
+            "score": 5,
+            "total_questions": 5,
+            "time_taken": "0:18",
+            "date_created": "2026-08-01T10:15:00.000000Z"
+        },
+        {
+            "username": "gevariya",
+            "category": "HTML Quiz",
+            "score": 4,
+            "total_questions": 5,
+            "time_taken": "0:25",
+            "date_created": "2026-08-02T11:20:00.000000Z"
+        },
+        {
+            "username": "kirtan patel",
             "category": "HTML Quiz",
             "score": 2,
             "total_questions": 5,
