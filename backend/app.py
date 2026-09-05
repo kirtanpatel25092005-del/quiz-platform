@@ -1027,55 +1027,7 @@ if MONGO_URI:
 # User Auth and Profile Database APIs
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
 
-def cleanup_old_data(data):
-    import datetime
-    changed = False
-    now = datetime.datetime.utcnow()
-    ten_days_ago = now - datetime.timedelta(days=10)
 
-    # 1. Clean up users
-    users = data.get("users", {})
-    new_users = {}
-    for username, user_info in users.items():
-        date_str = user_info.get("date_created")
-        keep = True
-        if date_str:
-            try:
-                dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                if dt.tzinfo is not None:
-                    dt = dt.replace(tzinfo=None)
-                if dt < ten_days_ago:
-                    keep = False
-                    changed = True
-            except Exception as e:
-                logging.error(f"Error parsing date_created for user {username}: {e}")
-        if keep:
-            new_users[username] = user_info
-    
-    # 2. Clean up history
-    history = data.get("history", [])
-    new_history = []
-    for item in history:
-        date_str = item.get("date_created")
-        keep = True
-        if date_str:
-            try:
-                dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                if dt.tzinfo is not None:
-                    dt = dt.replace(tzinfo=None)
-                if dt < ten_days_ago:
-                    keep = False
-                    changed = True
-            except Exception as e:
-                logging.error(f"Error parsing date_created for history item: {e}")
-        if keep:
-            new_history.append(item)
-            
-    if changed:
-        data["users"] = new_users
-        data["history"] = new_history
-        
-    return data, changed
 
 def load_data():
     if is_mongo_active and mongo_db is not None:
@@ -1087,12 +1039,7 @@ def load_data():
                     users_dict[u["username"]] = u
 
             history_doc = list(mongo_db.history.find({}, {'_id': 0}).sort("date_created", -1))
-            
-            data = {"users": users_dict, "history": history_doc}
-            cleaned_data, changed = cleanup_old_data(data)
-            if changed:
-                save_data(cleaned_data)
-            return cleaned_data
+            return {"users": users_dict, "history": history_doc}
         except Exception as e:
             logging.error(f"Error loading data from MongoDB: {e}")
 
@@ -1102,10 +1049,7 @@ def load_data():
     try:
         with open(DATA_FILE, 'r') as f:
             data = json.load(f)
-        cleaned_data, changed = cleanup_old_data(data)
-        if changed:
-            save_data(cleaned_data)
-        return cleaned_data
+        return data
     except Exception as e:
         logging.error(f"Error loading database file: {e}")
         return {"users": {}, "history": []}
@@ -1270,8 +1214,27 @@ def api_save_score():
         return jsonify({"success": False, "message": "Username is required."})
 
     db = load_data()
-    if username not in db["users"]:
-        return jsonify({"success": False, "message": "User not found."})
+    if "users" not in db:
+        db["users"] = {}
+    if "history" not in db:
+        db["history"] = []
+
+    # Case-insensitive user lookup
+    matched_user = None
+    for u in db["users"]:
+        if u.lower() == username.lower():
+            matched_user = u
+            break
+            
+    if not matched_user:
+        matched_user = username
+        db["users"][username] = {
+            "username": username,
+            "email": f"{username}@guest.com",
+            "password": "",
+            "date_created": datetime.datetime.utcnow().isoformat() + "Z"
+        }
+    username = matched_user
 
     import datetime
     db["history"].insert(0, {
