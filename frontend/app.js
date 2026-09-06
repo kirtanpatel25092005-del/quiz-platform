@@ -746,9 +746,7 @@ function toggleSpeech() {
     
     // Choose speech language accent
     const language = languageSelect.value.toLowerCase();
-    if (language === 'gujarati') {
-        currentUtterance.lang = 'gu-IN';
-    } else if (language === 'hindi') {
+    if (language === 'hindi') {
         currentUtterance.lang = 'hi-IN';
     } else {
         currentUtterance.lang = 'en-US';

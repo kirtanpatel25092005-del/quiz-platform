@@ -40,7 +40,7 @@ The frontend is built using **HTML5, CSS3 (Vanilla), and JavaScript (ES6)** with
    * **Browse Mode**: Start instant default quizzes in various categories (HTML, CSS, JS, Python, AI, Space, History, Sports, GK).
    * **Custom Mode (Topic-based)**: Generate quizzes on any custom topic.
    * **Custom Mode (File-upload)**: Upload a **PDF** or **TXT** document to generate questions directly from its text content.
-   * **Language Selection**: Generate quizzes in **English, Gujarati, or Hindi**.
+   * **Language Selection**: Generate quizzes in **English or Hindi**.
    * **Timer**: 30-second countdown timer per question.
    * **Text-to-Speech (TTS)**: Reads out questions using the browser speech synthesis engine.
    * **Leaderboard View**: Shows latest scores from the local database.
@@ -77,7 +77,7 @@ The frontend `app.js` communicates with the backend `app.py` using standard asyn
   * `topic` (string) - Topic name or uploaded filename.
   * `difficulty` (string) - `easy` | `medium` | `hard`
   * `count` (integer) - Number of questions requested.
-  * `language` (string) - `English` | `Gujarati` | `Hindi`
+  * `language` (string) - `English` | `Hindi`
   * `quiz_type` (string) - `mcq` | `true_false` | `mixed`
   * `file` (file, optional) - PDF or TXT file object.
 * **Response**:

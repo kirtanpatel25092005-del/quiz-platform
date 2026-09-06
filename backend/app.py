@@ -95,7 +95,6 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
     # Localization for options/explanations
     local_labels = {
         "english": {"true": "True", "false": "False", "based_on": "Based on the uploaded document: "},
-        "gujarati": {"true": "સાચું", "false": "ખોટું", "based_on": "અપલોડ કરેલ દસ્તાવેજ મુજબ: "},
         "hindi": {"true": "सत्य", "false": "असत्य", "based_on": "अपलोड किए गए दस्तावेज़ के अनुसार: "}
     }
     lang_lower = language.lower()
@@ -120,7 +119,6 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
                 # Simple negation
                 negations = {
                     "english": ["It is not true that ", "False that: "],
-                    "gujarati": ["એવું નથી કે ", "ખોટું વિધાન છે કે "],
                     "hindi": ["यह सत्य नहीं है कि ", "गलत कथन है कि "]
                 }
                 neg_prefix = random.choice(negations.get(lang_lower, negations["english"]))
@@ -181,33 +179,32 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
     # Simple localization dictionary
     local_labels = {
         "english": {"true": "True", "false": "False", "exp": "Explanation"},
-        "gujarati": {"true": "સાચું", "false": "ખોટું", "exp": "સમજૂતી"},
         "hindi": {"true": "सत्य", "false": "असत्य", "exp": "स्पष्टीकरण"}
     }
     labels = local_labels.get(lang_lower, local_labels["english"])
     
     # Identify Topic Category
-    if "html" in topic_lower or "એચટીએમએલ" in topic_lower or "एचटीएमएल" in topic_lower:
+    if "html" in topic_lower or "एचटीएमएल" in topic_lower:
         topic_cat = "html"
-    elif "css" in topic_lower or "સીએસએસ" in topic_lower or "सीएसएस" in topic_lower:
+    elif "css" in topic_lower or "सीएसएस" in topic_lower:
         topic_cat = "css"
-    elif "javascript" in topic_lower or "js" in topic_lower or "જાવાસ્ક્રિપ્ટ" in topic_lower or "जावास्क्रिप्ट" in topic_lower:
+    elif "javascript" in topic_lower or "js" in topic_lower or "जावास्क्रिप्ट" in topic_lower:
         topic_cat = "javascript"
-    elif "python" in topic_lower or "py" in topic_lower or "પાયથોન" in topic_lower or "पायथन" in topic_lower:
+    elif "python" in topic_lower or "py" in topic_lower or "पायथन" in topic_lower:
         topic_cat = "python"
-    elif "cricket" in topic_lower or "ક્રિકેટ" in topic_lower or "क्रिकेट" in topic_lower:
+    elif "cricket" in topic_lower or "क्रिकेट" in topic_lower:
         topic_cat = "cricket"
-    elif "sport" in topic_lower or "game" in topic_lower or "play" in topic_lower or "ball" in topic_lower or "foot" in topic_lower or "soccer" in topic_lower or "રમત" in topic_lower or "રમતો" in topic_lower or "ખેલ" in topic_lower or "खेल" in topic_lower:
+    elif "sport" in topic_lower or "game" in topic_lower or "play" in topic_lower or "ball" in topic_lower or "foot" in topic_lower or "soccer" in topic_lower or "खेल" in topic_lower:
         topic_cat = "sports"
-    elif "general" in topic_lower or "knowledge" in topic_lower or "gk" in topic_lower or "સામાન્ય" in topic_lower or "સામાન્ય જ્ઞાન" in topic_lower or "सामान्य" in topic_lower or "सामान्य ज्ञान" in topic_lower:
+    elif "general" in topic_lower or "knowledge" in topic_lower or "gk" in topic_lower or "सामान्य" in topic_lower or "सामान्य ज्ञान" in topic_lower:
         topic_cat = "gk"
-    elif "tech" in topic_lower or "computer" in topic_lower or "ટેકનોલોજી" in topic_lower or "કમ્પ્યુટર" in topic_lower or "कंप्यूटर" in topic_lower or "तकीनीकी" in topic_lower or "तकनीक" in topic_lower:
+    elif "tech" in topic_lower or "computer" in topic_lower or "कंप्यूटर" in topic_lower or "तकीनीकी" in topic_lower or "तकनीक" in topic_lower:
         topic_cat = "tech"
-    elif "ai" in topic_lower or "generative" in topic_lower or "llm" in topic_lower or "gpt" in topic_lower or "એઆઈ" in topic_lower or "एआई" in topic_lower:
+    elif "ai" in topic_lower or "generative" in topic_lower or "llm" in topic_lower or "gpt" in topic_lower or "एआई" in topic_lower:
         topic_cat = "ai"
-    elif "space" in topic_lower or "astronomy" in topic_lower or "universe" in topic_lower or "અવકાશ" in topic_lower or "બ્રહ્માંડ" in topic_lower or "अंतरिक्ष" in topic_lower or "ब्रह्मांड" in topic_lower:
+    elif "space" in topic_lower or "astronomy" in topic_lower or "universe" in topic_lower or "अंतरिक्ष" in topic_lower or "ब्रह्मांड" in topic_lower:
         topic_cat = "space"
-    elif "history" in topic_lower or "india" in topic_lower or "war" in topic_lower or "king" in topic_lower or "ઇતિહાસ" in topic_lower or "ભારત" in topic_lower or "इतिहास" in topic_lower or "भारत" in topic_lower:
+    elif "history" in topic_lower or "india" in topic_lower or "war" in topic_lower or "king" in topic_lower or "इतिहास" in topic_lower or "भारत" in topic_lower:
         topic_cat = "history"
     else:
         topic_cat = "gk"
@@ -394,100 +391,6 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
                 ]
             }
         },
-        "gujarati": {
-            "html": {
-                "true_false": [
-                    {"question": "HTML એ એક પ્રોગ્રામિંગ લેંગ્વેજ છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "HTML એ એક માર્કઅપ લેંગ્વેજ છે, તેમાં પ્રોગ્રામિંગ લોજિક હોતું નથી.", "difficulty": "easy"},
-                    {"question": "HTML નું પૂરું નામ Hyper Text Markup Language છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "હા, HTML એટલે Hyper Text Markup Language.", "difficulty": "medium"}
-                ],
-                "mcq": [
-                    {"question": "HTML માં સૌથી મોટું હેડિંગ કયું છે?", "options": ["<h6>", "<head>", "<h1>", "<heading>"], "correct_answer": "<h1>", "explanation": "HTML માં <h1> સૌથી મોટું હેડિંગ છે.", "difficulty": "easy"}
-                ]
-            },
-            "css": {
-                "true_false": [
-                    {"question": "CSS નો ઉપયોગ વેબસાઈટની ડિઝાઇન અને સ્ટ્રક્ચર બનાવવા માટે થાય છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "હા, CSS પેજને કલર અને સ્ટાઇલ આપવા માટે વપરાય છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "CSS નું પૂરું નામ શું છે?", "options": ["Computer Style Sheets", "Creative Style Sheets", "Cascading Style Sheets", "Colorful Style Sheets"], "correct_answer": "Cascading Style Sheets", "explanation": "CSS એટલે Cascading Style Sheets.", "difficulty": "easy"}
-                ]
-            },
-            "javascript": {
-                "true_false": [
-                    {"question": "JavaScript કેસ-સેન્સિટિવ ભાષા છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "હા, JS કેસ સેન્સિટિવ છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "જાવાસ્ક્રિપ્ટમાં કયો કીવર્ડ વેરિએબલ ડિક્લેર કરવા માટે વપરાય છે?", "options": ["var", "let", "const", "આપેલ તમામ"], "correct_answer": "આપેલ તમામ", "explanation": "જાવાસ્ક્રિપ્ટમાં વેરિએબલ માટે var, let, અને const ત્રણેય વપરાય છે.", "difficulty": "easy"}
-                ]
-            },
-            "sports": {
-                "true_false": [
-                    {"question": "ફૂટબોલની એક ટીમમાં મેદાન પર 11 ખેલાડીઓ રમે છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "સાચું, ફૂટબોલની મેદાન પરની ટીમમાં 11 ખેલાડીઓ હોય છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "વર્ષ 2022 નો ફીફા વર્લ્ડ કપ કયો દેશ જીત્યો હતો?", "options": ["ફ્રાન્સ", "બ્રાઝિલ", "આર્જેન્ટિના", "પોર્ટુગલ"], "correct_answer": "આર્જેન્ટિના", "explanation": "આર્જેન્ટિનાએ 2022 નો વર્લ્ડ કપ જીત્યો હતો.", "difficulty": "easy"}
-                ]
-            },
-            "cricket": {
-                "true_false": [
-                    {"question": "ક્રિકેટ મેચમાં દરેક ટીમમાં 11 ખેલાડીઓ હોય છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "સાચું, દરેક ટીમમાં 11 ખેલાડીઓ રમે છે.", "difficulty": "easy"},
-                    {"question": "આઈસીસી વનડે ક્રિકેટ વર્લ્ડ કપ દર ચાર વર્ષે રમાય છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "સાચું, વનડે વર્લ્ડ કપ દર 4 વર્ષે એકવાર યોજાય છે.", "difficulty": "medium"}
-                ],
-                "mcq": [
-                    {"question": "ક્રિકેટમાં 'સેન્ચુરી' એટલે કેટલા રન થાય?", "options": ["50", "100", "150", "200"], "correct_answer": "100", "explanation": "સેન્ચુરી એટલે કોઈ એક બેટ્સમેન દ્વારા એક જ ઇનિંગ્સમાં કરાયેલા 100 રન.", "difficulty": "easy"},
-                    {"question": "કયા ભારતીય ક્રિકેટરને 'માસ્ટર બ્લાસ્ટર' તરીકે ઓળખવામાં આવે છે?", "options": ["સચિન તેંડુલકર", "એમ એસ ધોની", "વિરાટ કોહલી", "કપિલ દેવ"], "correct_answer": "સચિન તેંડુલકર", "explanation": "સચિન તેંડુલકરને ક્રિકેટ જગતના માસ્ટર બ્લાસ્ટર તરીકે ઓળખવામાં આવે છે.", "difficulty": "easy"},
-                    {"question": "વર્ષ 2007 માં રમાયેલો પ્રથમ આઈસીસી ટી20 વર્લ્ડ કપ કયો દેશ જીત્યો હતો?", "options": ["પાકિસ્તાન", "ભારત", "ઓસ્ટ્રેલિયા", "વેસ્ટ ઇન્ડીઝ"], "correct_answer": "ભારत", "explanation": "ભારતે એમ એસ ધોનીની કેપ્ટનશીપ હેઠળ પ્રથમ ટી20 વર્લ્ડ કપ જીત્યો હતો.", "difficulty": "medium"}
-                ]
-            },
-            "gk": {
-                "true_false": [
-                    {"question": "નદીનું પાણી હંમેશા મીઠું હોય છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "સાચું, નદીઓમાં મીઠું પાણી વહે છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "ભારત દેશનું પાટનગર કયું છે?", "options": ["મુંબઈ", "નવી દિલ્હી", "ગાંધીનગર", "કોલકાતા"], "correct_answer": "નવી દિલ્હી", "explanation": "નવી દિલ્હી એ ભારતની રાજધાની છે.", "difficulty": "easy"}
-                ]
-            },
-            "tech": {
-                "true_false": [
-                    {"question": "RAM એ કાયમી સંગ્રહસ્થાન ધરાવતી મેમરી છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "RAM એ અસ્થિર (Volatile) મેમરી છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "કમ્પ્યુટરનો મગજ કોને કહેવામાં આવે છે?", "options": ["RAM", "CPU", "Hard Disk", "Monitor"], "correct_answer": "CPU", "explanation": "CPU ને કમ્પ્યુટરનું મગજ કહેવામાં આવે છે.", "difficulty": "easy"}
-                ]
-            },
-            "python": {
-                "true_false": [
-                    {"question": "Python એ કમ્પાઈલ કરેલી ભાષા છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "Python એ મુખ્યત્વે ઇન્ટરપ્રિટેડ ભાષા છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "પાયથોનમાં કયો કીવર્ડ ફંક્શન બનાવવા માટે વપરાય છે?", "options": ["function", "def", "fun", "create"], "correct_answer": "def", "explanation": "def કીવર્ડનો ઉપયોગ થાય છે.", "difficulty": "easy"}
-                ]
-            },
-            "ai": {
-                "true_false": [
-                    {"question": "LLM એટલે Large Language Model.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "સાચું, LLM એટલે Large Language Model.", "difficulty": "medium"}
-                ],
-                "mcq": [
-                    {"question": "Generative AI નું પૂરું નામ શું છે?", "options": ["Generative Artificial Intelligence", "General AI", "Global AI", "None of these"], "correct_answer": "Generative Artificial Intelligence", "explanation": "Generative AI એટલે Generative Artificial Intelligence.", "difficulty": "easy"}
-                ]
-            },
-            "space": {
-                "true_false": [
-                    {"question": "સૂર્ય એક તારો છે.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "સાચું, સૂર્ય એ આપણા સૂર્યમંડળની મધ્યમાં આવેલો તારો છે.", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "સૂર્યમંડળનો સૌથી મોટો ગ્રહ કયો છે?", "options": ["શનિ", "ગુરુ", "પૃથ્વી", "મંગળ"], "correct_answer": "ગુરુ", "explanation": "ગુરુ એ સૂર્યમંડળનો સૌથી મોટો ગ્રહ છે.", "difficulty": "easy"}
-                ]
-            },
-            "history": {
-                "true_false": [
-                    {"question": "ભારત દેશ ૧૯૪૭ માં આઝાદ થયો હતો.", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "હા, ભારત ૧૫ ઓગસ્ટ ૧૯૪૭ ના રોજ સ્વતંત્ર થયો હતો.", "difficulty": "medium"}
-                ],
-                "mcq": [
-                    {"question": "ભારતના લોખંડી પુરુષ તરીકે કોણ ઓળખાય છે?", "options": ["મહાત્મા ગાંધી", "જવાહરલાલ નેહરુ", "સરદાર વલ્લભભાઈ પટેલ", "સુભાષચંદ્ર બોઝ"], "correct_answer": "સરદાર વલ્લભભાઈ પટેલ", "explanation": "સરદાર વલ્લભભાઈ પટેલને ભારતના લોખંડી પુરુષ કહેવાય છે.", "difficulty": "easy"}
-                ]
-            }
-        },
         "hindi": {
             "html": {
                 "true_false": [
@@ -653,10 +556,7 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
     if quiz_type == "true_false":
         t_label = "True"
         f_label = "False"
-        if language.lower() == "gujarati":
-            t_label = "સાચું"
-            f_label = "ખોટું"
-        elif language.lower() == "hindi":
+        if language.lower() == "hindi":
             t_label = "सत्य"
             f_label = "असत्य"
         type_instruction = f'Questions MUST be True/False statement style, and the options list MUST consist of exactly these two elements: ["{t_label}", "{f_label}"].'
@@ -833,10 +733,7 @@ def generate_quiz():
             if quiz_type == "true_false":
                 t_label = "True"
                 f_label = "False"
-                if language.lower() == "gujarati":
-                    t_label = "સાચું"
-                    f_label = "ખોટું"
-                elif language.lower() == "hindi":
+                if language.lower() == "hindi":
                     t_label = "सत्य"
                     f_label = "असत्य"
                 type_instruction = f'Questions MUST be True/False statement style, and the options list MUST consist of exactly these two elements: ["{t_label}", "{f_label}"].'
@@ -1179,7 +1076,7 @@ def api_get_profile():
         {"name": "Quiz Master", "desc": "Completed 5 quizzes", "icon": "🏆", "unlocked": total_quizzes >= 5},
         {"name": "Perfectionist", "desc": "Scored 5/5 on any quiz", "icon": "💎", "unlocked": highest_score >= 5},
         {"name": "Smart Brain", "desc": "Scored 4/5 or higher on any quiz", "icon": "💡", "unlocked": highest_score >= 4},
-        {"name": "Language Learner", "desc": "Took a quiz in English or Gujarati", "icon": "🌐", "unlocked": total_quizzes >= 1},
+        {"name": "Language Learner", "desc": "Took a quiz in English or Hindi", "icon": "🌐", "unlocked": total_quizzes >= 1},
         {"name": "Dedicated", "desc": "Completed 10 quizzes", "icon": "🔥", "unlocked": total_quizzes >= 10}
     ]
 
