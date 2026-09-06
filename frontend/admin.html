@@ -414,11 +414,14 @@
             </div>
             <div class="header-actions">
                 <button onclick="refreshData()" class="btn">
-                    <span>🔄</span> Refresh
-                </button>
-                <a href="index.html" class="btn">
-                    <span>🏠</span> Back to Home
-                </a>
+                        <span>🔄</span> Refresh
+                    </button>
+                    <a href="index.html" class="btn">
+                        <span>🏠</span> Back to Home
+                    </a>
+                    <button onclick="logoutAdmin()" class="btn btn-primary">
+                        <span>🚪</span> Logout
+                    </button>
             </div>
         </div>
     </header>
@@ -515,7 +518,9 @@
             e.preventDefault();
             const inputVal = document.getElementById('secret-key-input').value.trim();
             if (inputVal === "kirtan") {
-                // Redirect with secret param in url
+                // Store secret in localStorage for persistent login
+                localStorage.setItem('admin_secret', inputVal);
+                // Redirect with secret param in url (optional)
                 window.location.search = `?secret=${encodeURIComponent(inputVal)}`;
             } else {
                 document.getElementById('auth-error').style.display = 'block';
@@ -524,13 +529,17 @@
 
         // Initialize dashboard
         window.addEventListener('DOMContentLoaded', async () => {
-            const secret = getQueryParam('secret');
+            // Try to get secret from URL first, then from localStorage
+            let secret = getQueryParam('secret');
+            if (!secret) {
+                secret = localStorage.getItem('admin_secret');
+            }
             if (secret === "kirtan") {
                 // Hide overlay, show dashboard
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('main-header').style.display = 'block';
                 document.getElementById('main-content').style.display = 'block';
-                
+
                 // Fetch data
                 await loadDashboardData(secret);
             } else if (secret) {
@@ -677,8 +686,9 @@
             const originalHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span>🔄</span> Refreshing...';
-            
-            const secret = getQueryParam('secret');
+
+            // Retrieve secret from localStorage if present
+            const secret = localStorage.getItem('admin_secret') || getQueryParam('secret');
             if (secret) {
                 try {
                     await loadDashboardData(secret);
@@ -687,11 +697,20 @@
                     btn.innerHTML = '<span>❌</span> Failed!';
                 }
             }
-            
+
             setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }, 1000);
+        }
+
+        // Logout admin and clear stored secret
+        function logoutAdmin() {
+            localStorage.removeItem('admin_secret');
+            // Optionally clear URL parameters
+            window.location.search = '';
+            // Reload page to show login overlay again
+            window.location.reload();
         }
 
         // Utility to escape HTML
