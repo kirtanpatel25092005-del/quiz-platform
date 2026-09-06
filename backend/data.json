@@ -11,7 +11,38 @@
             "email": "gevariya111@gmail.com",
             "password": "Gevariya@123",
             "date_created": "2026-07-31T12:52:22.739794Z"
+        },
+        "gevariya1": {
+            "username": "gevariya1",
+            "email": "k11@gmail.com",
+            "password": "Kirt@n11",
+            "date_created": "2026-09-06T15:40:01.984870Z"
         }
     },
-    "history": []
+    "history": [
+        {
+            "username": "kirtan patel",
+            "category": "Groq AI Quiz Generator",
+            "score": 5,
+            "total_questions": 5,
+            "time_taken": "0:18",
+            "date_created": "2026-09-05T09:10:00.000000Z"
+        },
+        {
+            "username": "gevariya",
+            "category": "HTML Quiz",
+            "score": 4,
+            "total_questions": 5,
+            "time_taken": "0:25",
+            "date_created": "2026-09-05T09:12:00.000000Z"
+        },
+        {
+            "username": "gevariya1",
+            "category": "CSS Quiz",
+            "score": 3,
+            "total_questions": 5,
+            "time_taken": "0:10",
+            "date_created": "2026-09-06T15:41:15.229293Z"
+        }
+    ]
 }

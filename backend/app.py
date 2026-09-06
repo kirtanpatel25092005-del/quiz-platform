@@ -966,11 +966,10 @@ def save_data(data):
             mongo_db.history.delete_many({})
             if data.get("history"):
                 mongo_db.history.insert_many(data.get("history"))
-            return
         except Exception as e:
             logging.error(f"Error saving data to MongoDB: {e}")
 
-    # Local file save
+    # Local file save (always write to local data.json for permanent local backup)
     try:
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f, indent=4)
