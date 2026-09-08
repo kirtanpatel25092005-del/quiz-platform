@@ -180,6 +180,17 @@ function setupEventListeners() {
         generateQuiz();
     });
 
+    // Quiz Language Preference Sync
+    if (languageSelect) {
+        const savedLang = localStorage.getItem('quiz_language');
+        if (savedLang) {
+            languageSelect.value = savedLang;
+        }
+        languageSelect.addEventListener('change', () => {
+            localStorage.setItem('quiz_language', languageSelect.value);
+        });
+    }
+
     // Previous Question Button
     prevBtn.addEventListener('click', handlePrevQuestion);
 
@@ -458,7 +469,12 @@ async function startQuickQuiz(topic) {
     countSelect.value = '5';
     typeSelect.value = 'mcq';
     if (languageSelect) {
-        languageSelect.value = 'English';
+        const savedLang = localStorage.getItem('quiz_language');
+        if (!languageSelect.value && savedLang) {
+            languageSelect.value = savedLang;
+        } else if (!languageSelect.value) {
+            languageSelect.value = 'English';
+        }
     }
     activeMode = 'topic';
     quizOriginView = 'browse';
@@ -587,7 +603,7 @@ function loadQuestion() {
         
         if (answeredState) {
             button.disabled = true;
-            if (option === answeredState.selected) {
+            if (isAnswerMatch(option, answeredState.selected)) {
                 if (answeredState.isCorrect) {
                     button.classList.add('correct');
                     badgeSpan.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -595,7 +611,7 @@ function loadQuestion() {
                     button.classList.add('wrong');
                     badgeSpan.innerHTML = '<i class="fa-solid fa-xmark"></i>';
                 }
-            } else if (option === answeredState.correct) {
+            } else if (isAnswerMatch(option, answeredState.correct)) {
                 button.classList.add('correct');
                 badgeSpan.innerHTML = '<i class="fa-solid fa-check"></i>';
             }
@@ -620,6 +636,31 @@ function loadQuestion() {
     if (currentQuestionIndex > 0) {
         prevBtn.classList.remove('hidden');
     }
+}
+
+// Flexible Answer Matcher for Multilingual Quizzes
+function isAnswerMatch(a, b) {
+    if (a === undefined || a === null || b === undefined || b === null) return false;
+    const strA = String(a).trim();
+    const strB = String(b).trim();
+    if (strA === strB) return true;
+    if (strA.toLowerCase() === strB.toLowerCase()) return true;
+
+    // Strip common option markers e.g. "A. ", "A) ", "(A) ", "1. ", "क. ", "ख) "
+    const stripMarker = s => s.replace(/^([A-Da-d1-4कखगघ][\.\)\-\]]|\([A-Da-d1-4कखगघ]\))\s*/, '').trim();
+    const cleanA = stripMarker(strA);
+    const cleanB = stripMarker(strB);
+    if (cleanA && cleanB && cleanA.toLowerCase() === cleanB.toLowerCase()) return true;
+
+    // Normalize True/False variants across English and Hindi
+    const trueEquivs = ['true', 'सत्य', 'सही', 'सच्चा'];
+    const falseEquivs = ['false', 'असत्य', 'गलत', 'झूठा'];
+    const lowA = cleanA.toLowerCase();
+    const lowB = cleanB.toLowerCase();
+    if (trueEquivs.includes(lowA) && trueEquivs.includes(lowB)) return true;
+    if (falseEquivs.includes(lowA) && falseEquivs.includes(lowB)) return true;
+
+    return false;
 }
 
 // Timer
@@ -663,7 +704,7 @@ function handleOptionSelection(selectedBtn, selectedOption) {
     disableOptions();
 
     const question = quizQuestions[currentQuestionIndex];
-    const isCorrect = selectedOption === question.correct_answer;
+    const isCorrect = isAnswerMatch(selectedOption, question.correct_answer);
 
     if (isCorrect) {
         selectedBtn.classList.add('correct');
@@ -695,7 +736,7 @@ function highlightCorrectOption(correctAnswer) {
     const buttons = optionsContainer.querySelectorAll('.option-btn');
     buttons.forEach(btn => {
         const text = btn.querySelector('span').textContent;
-        if (text === correctAnswer) {
+        if (isAnswerMatch(text, correctAnswer)) {
             btn.classList.add('correct');
             btn.querySelector('.option-badge').innerHTML = '<i class="fa-solid fa-check"></i>';
         }

@@ -73,13 +73,13 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
     import re
     import random
     
-    # Split text into sentences
-    sentences = re.split(r'[.!?।]\s*', source_text)
+    # Split text into sentences (supports English and Hindi punctuation including danda)
+    sentences = re.split(r'[.!?।\n]\s*', source_text)
     clean_sentences = []
     for s in sentences:
-        s_clean = s.strip().replace('\n', ' ')
+        s_clean = s.strip()
         # Filter for reasonable sentence sizes
-        if 40 < len(s_clean) < 180:
+        if 35 < len(s_clean) < 220:
             clean_sentences.append(s_clean)
             
     # Remove duplicates
@@ -95,7 +95,7 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
     # Localization for options/explanations
     local_labels = {
         "english": {"true": "True", "false": "False", "based_on": "Based on the uploaded document: "},
-        "hindi": {"true": "सत्य", "false": "असत्य", "based_on": "अपलोड किए गए दस्तावेज़ के अनुसार: "}
+        "hindi": {"true": "सत्य", "false": "असत्य", "based_on": "दस्तावेज़ के अनुसार: "}
     }
     lang_lower = language.lower()
     labels = local_labels.get(lang_lower, local_labels["english"])
@@ -119,12 +119,12 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
                 # Simple negation
                 negations = {
                     "english": ["It is not true that ", "False that: "],
-                    "hindi": ["यह सत्य नहीं है कि ", "गलत कथन है कि "]
+                    "hindi": ["यह सत्य नहीं है कि ", "यह कथन असत्य है कि "]
                 }
                 neg_prefix = random.choice(negations.get(lang_lower, negations["english"]))
                 q_text = neg_prefix + sen[0].lower() + sen[1:] if lang_lower == "english" else neg_prefix + sen
                 correct = labels["false"]
-                explanation = labels["based_on"] + f"The statement has been negated."
+                explanation = labels["based_on"] + ("यह कथन बदल दिया गया है।" if lang_lower == "hindi" else "The statement has been negated.")
                 
             questions.append({
                 "question": q_text,
@@ -134,8 +134,12 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
             })
             
         else:
-            # Generate MCQ: find a word to blank out
-            words = re.findall(r'\b\w{5,15}\b', sen)
+            # Generate MCQ: find a suitable word to blank out (supports Devanagari and Latin letters)
+            if lang_lower == "hindi":
+                words = [w.strip() for w in re.findall(r'[\u0900-\u097F\w]{4,15}', sen) if len(w.strip()) >= 4]
+            else:
+                words = re.findall(r'\b\w{5,15}\b', sen)
+
             if not words:
                 # Fallback to T/F
                 questions.append({
@@ -150,22 +154,25 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
             q_text = sen.replace(target_word, "_______")
             
             # Find distractors from the source text
-            all_words = re.findall(r'\b\w{5,15}\b', source_text)
-            all_words = list(set([w for w in all_words if w.lower() != target_word.lower()]))
+            if lang_lower == "hindi":
+                all_words = list(set([w.strip() for w in re.findall(r'[\u0900-\u097F\w]{4,15}', source_text) if len(w.strip()) >= 4 and w.strip().lower() != target_word.lower()]))
+            else:
+                all_words = list(set([w for w in re.findall(r'\b\w{5,15}\b', source_text) if w.lower() != target_word.lower()]))
             
             if len(all_words) < 3:
-                distractors = ["Option A", "Option B", "Option C"]
+                distractors = ["विकल्प A", "विकल्प B", "विकल्प C"] if lang_lower == "hindi" else ["Option A", "Option B", "Option C"]
             else:
                 distractors = random.sample(all_words, min(3, len(all_words)))
                 
             options = distractors + [target_word]
             random.shuffle(options)
             
+            explanation_str = labels["based_on"] + (f"रिक्त स्थान में सही शब्द '{target_word}' आता है: '{sen}'" if lang_lower == "hindi" else f"The blank word is '{target_word}' to complete: '{sen}'.")
             questions.append({
                 "question": q_text,
                 "options": options,
                 "correct_answer": target_word,
-                "explanation": labels["based_on"] + f"The blank word is '{target_word}' to complete: '{sen}'."
+                "explanation": explanation_str
             })
             
     return questions
@@ -394,90 +401,178 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
         "hindi": {
             "html": {
                 "true_false": [
-                    {"question": "HTML एक प्रोग्रामिंग भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "HTML एक मार्कअप भाषा है, न कि प्रोग्रामिंग भाषा।", "difficulty": "easy"}
+                    {"question": "HTML एक प्रोग्रामिंग भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "HTML एक मार्कअप भाषा है जो वेब पेज की संरचना बनाती है, प्रोग्रामिंग भाषा नहीं।", "difficulty": "easy"},
+                    {"question": "HTML का पूर्ण रूप Hyper Text Markup Language है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "HTML का सही और पूर्ण नाम Hyper Text Markup Language है।", "difficulty": "easy"},
+                    {"question": "<img> टैग को क्लोजिंग </img> टैग की आवश्यकता होती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "<img> टैग एक सेल्फ-क्लोजिंग (एम्प्टी) टैग है।", "difficulty": "medium"},
+                    {"question": "HTML5 वेब मानकों का सबसे नवीनतम संस्करण है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "HTML5 वर्तमान में आधिकारिक वेब मानक का मुख्य संस्करण है।", "difficulty": "medium"},
+                    {"question": "HTML दस्तावेज़ में मुख्य सामग्री <body> टैग के अंदर लिखी जाती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "ब्राउज़र पर दिखने वाली सभी सामग्री <body> टैग में होती है।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "HTML का पूर्ण रूप क्या है?", "options": ["Hyper Text Markup Language", "High Text Markup Language", "Hyper Text Media Language", "None of these"], "correct_answer": "Hyper Text Markup Language", "explanation": "HTML का अर्थ Hyper Text Markup Language है।", "difficulty": "easy"}
+                    {"question": "HTML का पूर्ण रूप क्या है?", "options": ["Hyper Text Markup Language", "High Text Markup Language", "Hyper Text Media Language", "None of these"], "correct_answer": "Hyper Text Markup Language", "explanation": "HTML का अर्थ Hyper Text Markup Language है।", "difficulty": "easy"},
+                    {"question": "HTML में सबसे बड़ा हेडिंग टैग कौन सा है?", "options": ["<h1>", "<h6>", "<head>", "<heading>"], "correct_answer": "<h1>", "explanation": "HTML में <h1> सबसे बड़ा और <h6> सबसे छोटा हेडिंग टैग है।", "difficulty": "easy"},
+                    {"question": "वेब पेज पर हाइपरलिंक बनाने के लिए किस टैग का उपयोग किया जाता है?", "options": ["<a>", "<link>", "<href>", "<nav>"], "correct_answer": "<a>", "explanation": "एंकर टैग <a> का उपयोग हाइपरलिंक बनाने के लिए किया जाता है।", "difficulty": "medium"},
+                    {"question": "HTML में लाइन ब्रेक देने के लिए किस टैग का उपयोग होता है?", "options": ["<br>", "<lb>", "<break>", "<hr>"], "correct_answer": "<br>", "explanation": "<br> टैग टेक्स्ट में नई लाइन जोड़ने के लिए उपयोग किया जाता है।", "difficulty": "medium"},
+                    {"question": "HTML में ड्रॉपडाउन मेनू बनाने के लिए किस टैग का उपयोग किया जाता है?", "options": ["<select>", "<dropdown>", "<list>", "<input>"], "correct_answer": "<select>", "explanation": "<select> टैग और <option> का उपयोग ड्रॉपडाउन सूची बनाने में होता है।", "difficulty": "hard"}
                 ]
             },
             "css": {
                 "true_false": [
-                    {"question": "CSS का उपयोग वेब पेज को स्टाइल करने के लिए किया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, CSS पेज को डिजाइन करने के लिए उपयोग किया जाता है।", "difficulty": "easy"}
+                    {"question": "CSS का उपयोग वेब पेज को स्टाइल और डिज़ाइन करने के लिए किया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, CSS (Cascading Style Sheets) का मुख्य काम पेज को सुंदर और व्यवस्थित बनाना है।", "difficulty": "easy"},
+                    {"question": "इनलाइन CSS की प्राथमिकता एक्सटर्नल CSS से अधिक होती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, इनलाइन स्टाइल सबसे विशिष्ट होने के कारण प्राथमिकता में ऊपर रहता है।", "difficulty": "easy"},
+                    {"question": "CSS में क्लास सेलेक्टर को हैश (#) चिह्न से दर्शाया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "क्लास सेलेक्टर को डॉट (.) से और ID सेलेक्टर को हैश (#) से दर्शाते हैं।", "difficulty": "medium"},
+                    {"question": "Flexbox लेआउट 1-डायमेंशनल लेआउट सिस्टम है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "फ्लेक्सबॉक्स एक समय में एक दिशा (पंक्ति या स्तंभ) में काम करता है।", "difficulty": "medium"},
+                    {"question": "CSS Grid का उपयोग केवल 1-डायमेंशनल लेआउट बनाने के लिए किया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "CSS Grid एक 2-डायमेंशनल (पंक्ति और स्तंभ दोनों) लेआउट सिस्टम है।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "CSS का पूर्ण रूप क्या है?", "options": ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style Sheets", "Colorful Style Sheets"], "correct_answer": "Cascading Style Sheets", "explanation": "CSS का अर्थ Cascading Style Sheets है।", "difficulty": "easy"}
+                    {"question": "CSS का पूर्ण रूप क्या है?", "options": ["Cascading Style Sheets", "Computer Style Sheets", "Creative Style Sheets", "Colorful Style Sheets"], "correct_answer": "Cascading Style Sheets", "explanation": "CSS का अर्थ Cascading Style Sheets है।", "difficulty": "easy"},
+                    {"question": "टेक्स्ट का रंग बदलने के लिए किस CSS प्रॉपर्टी का उपयोग किया जाता है?", "options": ["color", "font-color", "text-color", "background-color"], "correct_answer": "color", "explanation": "टेक्स्ट के फ़ॉन्ट रंग को बदलने के लिए 'color' प्रॉपर्टी का उपयोग होता है।", "difficulty": "easy"},
+                    {"question": "CSS में ID सेलेक्टर का चयन करने के लिए किस चिह्न का उपयोग होता है?", "options": ["#", ".", "*", "@"], "correct_answer": "#", "explanation": "ID सेलेक्टर के लिए # (हैश) चिह्न का उपयोग किया जाता है।", "difficulty": "medium"},
+                    {"question": "तत्व के चारों ओर बाहरी खाली जगह (outer spacing) जोड़ने के लिए क्या उपयोग होता है?", "options": ["margin", "padding", "border", "gap"], "correct_answer": "margin", "explanation": "मार्जिन बॉर्डर के बाहर खाली जगह जोड़ता है, जबकि पैडिंग बॉर्डर के अंदर।", "difficulty": "medium"},
+                    {"question": "तत्वों के स्टैकिंग ऑर्डर (आगे-पीछे का स्तर) को नियंत्रित करने के लिए किस प्रॉपर्टी का उपयोग होता है?", "options": ["z-index", "stack-order", "position-index", "display-order"], "correct_answer": "z-index", "explanation": "z-index प्रॉपर्टी तय करती है कि कौन सा एलिमेंट स्क्रीन पर ऊपर दिखेगा।", "difficulty": "hard"}
                 ]
             },
             "javascript": {
                 "true_false": [
-                    {"question": "जावास्क्रिप्ट एक केस-सेंसिटिव भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, जावास्क्रिप्ट केस-सेंसिटिव है।", "difficulty": "easy"}
+                    {"question": "जावास्क्रिप्ट एक केस-सेंसिटिव भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, जावास्क्रिप्ट में 'myVar' और 'myvar' दो अलग-अलग वेरिएबल माने जाते हैं।", "difficulty": "easy"},
+                    {"question": "जावास्क्रिप्ट केवल ब्राउज़र पर चल सकती है, सर्वर पर नहीं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "Node.js की मदद से जावास्क्रिप्ट सर्वर साइड पर भी आसानी से चलती है।", "difficulty": "easy"},
+                    {"question": "=== ऑपरेटर वैल्यू और डेटा टाइप दोनों की समानता की जाँच करता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "=== सख्त समानता ऑपरेटर है जो टाइप और वैल्यू दोनों की जाँच करता है।", "difficulty": "medium"},
+                    {"question": "जावास्क्रिप्ट और जावा दोनों एक ही प्रोग्रामिंग भाषा हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "जावा और जावास्क्रिप्ट दोनों पूरी तरह से अलग-अलग भाषाएं हैं।", "difficulty": "medium"},
+                    {"question": "जावास्क्रिप्ट सिंगल-थ्रेडेड प्रोग्रामिंग भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "जावास्क्रिप्ट सिंगल थ्रेडेड है और इवेंट लूप की मदद से एसिंक्रोनस काम करती है।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "जावास्क्रिप्ट में वेरिएबल घोषित करने के लिए किस कीवर्ड का उपयोग किया जाता है?", "options": ["var", "let", "const", "इनमें से सभी"], "correct_answer": "इनमें से सभी", "explanation": "जावास्क्रिप्ट में var, let और const तीनों का उपयोग वेरिएबल घोषित करने के लिए होता है।", "difficulty": "easy"}
-                ]
-            },
-            "sports": {
-                "true_false": [
-                    {"question": "फुटबॉल की एक टीम में मैदान पर 11 खिलाड़ी होते हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, प्रत्येक फुटबॉल टीम में मैदान पर 11 खिलाड़ी खेलते हैं।", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "2022 फीफा विश्व कप की विजेता टीम कौन सी थी?", "options": ["आर्जेन्टीना", "फ्रांस", "ब्राजील", "क्रोएशिया"], "correct_answer": "आर्जेन्टीना", "explanation": "आर्जेन्टीना ने फाइनल में फ्रांस को हराकर कप जीता।", "difficulty": "easy"}
-                ]
-            },
-            "cricket": {
-                "true_false": [
-                    {"question": "वनडे क्रिकेट विश्व कप हर चार साल में आयोजित किया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, एकदिवसीय विश्व कप प्रत्येक चार वर्ष में होता है।", "difficulty": "medium"}
-                ],
-                "mcq": [
-                    {"question": "क्रिकेट में 'शतक' का क्या अर्थ है?", "options": ["50 रन", "100 रन", "150 रन", "200 रन"], "correct_answer": "100 रन", "explanation": "क्रिकेट में एक पारी में 100 रन बनाना शतक कहलाता है।", "difficulty": "easy"}
-                ]
-            },
-            "gk": {
-                "true_false": [
-                    {"question": "माउंट एवरेस्ट दुनिया की सबसे ऊंची चोटी है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, माउंट एवरेस्ट दुनिया का सबसे ऊंचा शिखर है।", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "भारत की राजधानी क्या है?", "options": ["मुंबई", "नई दिल्ली", "कोलकाता", "चेन्नई"], "correct_answer": "नई दिल्ली", "explanation": "नई दिल्ली भारत की राजधानी है।", "difficulty": "easy"}
-                ]
-            },
-            "tech": {
-                "true_false": [
-                    {"question": "RAM एक वोलाटाइल (अस्थायी) मेमोरी है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, बिजली बंद होने पर RAM का सारा डेटा नष्ट हो जाता है।", "difficulty": "easy"}
-                ],
-                "mcq": [
-                    {"question": "कंप्यूटर का मुख्य बोर्ड कौन सा है?", "options": ["CPU", "Motherboard", "RAM", "Hard Disk"], "correct_answer": "Motherboard", "explanation": "मदरबोर्ड मुख्य सर्किट बोर्ड है जो सभी हिस्सों को जोड़ता है।", "difficulty": "easy"}
+                    {"question": "जावास्क्रिप्ट में ब्लॉक-स्कोप वेरिएबल घोषित करने के लिए कौन सा कीवर्ड उपयुक्त है?", "options": ["let", "var", "function", "define"], "correct_answer": "let", "explanation": "let और const ब्लॉक-स्कोप होते हैं, जबकि var फंक्शन-स्कोप होता है।", "difficulty": "easy"},
+                    {"question": "जावास्क्रिप्ट में कंसोल पर संदेश प्रिंट करने के लिए क्या उपयोग होता है?", "options": ["console.log()", "print()", "system.out.print()", "echo()"], "correct_answer": "console.log()", "explanation": "ब्राउज़र या नोड कंसोल पर आउटपुट देखने के लिए console.log() का उपयोग होता है।", "difficulty": "easy"},
+                    {"question": "जावास्क्रिप्ट में किसी वेरिएबल का प्रकार (Data Type) जानने के लिए किस ऑपरेटर का उपयोग होता है?", "options": ["typeof", "type", "instanceof", "checkType"], "correct_answer": "typeof", "explanation": "typeof ऑपरेटर किसी वेरिएबल का डेटा टाइप बताता है।", "difficulty": "medium"},
+                    {"question": "जावास्क्रिप्ट में ऐरे (Array) की लंबाई जानने के लिए किस प्रॉपर्टी का उपयोग किया जाता है?", "options": ["length", "size", "count", "len"], "correct_answer": "length", "explanation": "array.length से ऐरे में मौजूद तत्वों की कुल संख्या मिलती है।", "difficulty": "medium"},
+                    {"question": "जावास्क्रिप्ट में कौन सा फंक्शन स्ट्रिंग को पूर्णांक (Integer) में बदलता है?", "options": ["parseInt()", "toInteger()", "Number.integer()", "castInt()"], "correct_answer": "parseInt()", "explanation": "parseInt() स्ट्रिंग को पार्स करके इंटीजर नंबर लौटाता है।", "difficulty": "hard"}
                 ]
             },
             "python": {
                 "true_false": [
-                    {"question": "Python एक इंटरप्रिटेड (Interpreted) भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, पायथन कोड लाइन-दर-लाइन इंटरप्रिट और रन होता है।", "difficulty": "easy"}
+                    {"question": "Python एक इंटरप्रिटेड (Interpreted) भाषा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, पायथन कोड लाइन-दर-लाइन इंटरप्रिटर द्वारा निष्पादित होता है।", "difficulty": "easy"},
+                    {"question": "Python में कोड ब्लॉक दर्शाने के लिए इंडेंटेशन (स्पेसिंग) अनिवार्य है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "पायथन में घुंघराले ब्रैकेट {} की जगह इंडेंटेशन का उपयोग किया जाता है।", "difficulty": "easy"},
+                    {"question": "Python में टपल (Tuple) को परिभाषित करने के बाद बदला (Mutable) जा सकता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "टपल इम्यूटेबल (अपरिवर्तनीय) होते हैं, इन्हें बदला नहीं जा सकता।", "difficulty": "medium"},
+                    {"question": "Python में फंक्शन बनाने के लिए 'function' कीवर्ड का उपयोग किया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "पायथन में फंक्शन को 'def' कीवर्ड से परिभाषित किया जाता है।", "difficulty": "medium"},
+                    {"question": "Python बहु-विरासत (Multiple Inheritance) का समर्थन करती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, एक पायथन क्लास एक से अधिक बेस क्लास से इनहेरिट कर सकती है।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "Python में प्रिंट करने के लिए किस फंक्शन का उपयोग किया जाता है?", "options": ["echo()", "printf()", "print()", "console.log()"], "correct_answer": "print()", "explanation": "पायथन में कंसोल पर संदेश दिखाने के लिए print() का उपयोग होता है।", "difficulty": "easy"}
+                    {"question": "Python में स्क्रीन पर आउटपुट प्रिंट करने के लिए किस फंक्शन का उपयोग किया जाता है?", "options": ["print()", "echo()", "printf()", "console.log()"], "correct_answer": "print()", "explanation": "पायथन में संदेश प्रदर्शित करने के लिए print() फंक्शन का उपयोग होता है।", "difficulty": "easy"},
+                    {"question": "Python में सिंगल लाइन कमेंट लिखने के लिए किस प्रतीक का उपयोग किया जाता है?", "options": ["#", "//", "/* */", "<!-- -->"], "correct_answer": "#", "explanation": "पायथन में सिंगल लाइन कमेंट के लिए # प्रतीक का उपयोग होता है।", "difficulty": "easy"},
+                    {"question": "Python में लिस्ट (List) बनाने के लिए किस ब्रैकेट का उपयोग होता है?", "options": ["[] (Square Brackets)", "() (Parentheses)", "{} (Curly Braces)", "<> (Angle Brackets)"], "correct_answer": "[] (Square Brackets)", "explanation": "लिस्ट के लिए चौकोर ब्रैकेट [] और टपल के लिए गोल ब्रैकेट () का उपयोग होता है।", "difficulty": "medium"},
+                    {"question": "Python में डिक्शनरी में 'key-value' जोड़े होते हैं। इसे किस ब्रैकेट से बनाया जाता है?", "options": ["{}", "[]", "()", "||"], "correct_answer": "{}", "explanation": "डिक्शनरी और सेट को कर्ली ब्रेसेस {} से परिभाषित किया जाता है।", "difficulty": "medium"},
+                    {"question": "Python में फाइल को सुरक्षित रूप से खोलने और स्वतः बंद करने के लिए किस स्टेटमेंट का उपयोग होता है?", "options": ["with open()", "try open()", "file.auto()", "open.close()"], "correct_answer": "with open()", "explanation": "with स्टेटमेंट संदर्भ प्रबंधक के रूप में फाइल को काम खत्म होने पर स्वतः बंद कर देता है।", "difficulty": "hard"}
                 ]
             },
             "ai": {
                 "true_false": [
-                    {"question": "LLM का पूर्ण रूप Large Language Model है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, LLM का पूर्ण रूप Large Language Model है।", "difficulty": "medium"}
+                    {"question": "LLM का पूर्ण रूप Large Language Model है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, LLM का पूर्ण रूप Large Language Model होता है।", "difficulty": "easy"},
+                    {"question": "आर्टिफिशियल न्यूरल नेटवर्क मानव मस्तिष्क की कार्यप्रणाली से प्रेरित हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, कृत्रिम न्यूरॉन्स मानव दिमाग के जैविक न्यूरॉन्स के मॉडल पर आधारित हैं।", "difficulty": "easy"},
+                    {"question": "पर्यवेक्षित शिक्षण (Supervised Learning) में डेटा बिना किसी लेबल के होता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "पर्यवेक्षित शिक्षण में लेबल किए गए डेटा (इनपुट और सही आउटपुट) की आवश्यकता होती है।", "difficulty": "medium"},
+                    {"question": "डीप लर्निंग (Deep Learning) मशीन लर्निंग का ही एक उपसमूह (Subset) है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "AI के अंदर ML आता है, और ML के अंदर Deep Learning आता है।", "difficulty": "medium"},
+                    {"question": "Transformer आर्किटेक्चर को सबसे पहले 2017 में 'Attention Is All You Need' पेपर में पेश किया गया था।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, गूगल के शोधकर्ताओं ने 2017 में ट्रांसफॉर्मर आर्किटेक्चर पेश किया था।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "AI का पूर्ण रूप क्या है?", "options": ["Artificial Intelligence", "Active Intelligence", "Automated Information", "None of these"], "correct_answer": "Artificial Intelligence", "explanation": "AI का पूर्ण रूप Artificial Intelligence है।", "difficulty": "easy"}
+                    {"question": "AI का पूर्ण रूप क्या है?", "options": ["Artificial Intelligence", "Active Intelligence", "Automated Information", "Advanced Integration"], "correct_answer": "Artificial Intelligence", "explanation": "AI का पूरा नाम Artificial Intelligence (कृत्रिम बुद्धिमत्ता) है।", "difficulty": "easy"},
+                    {"question": "आधुनिक Large Language Models (LLMs) की मुख्य नींव कौन सा आर्किटेक्चर है?", "options": ["Transformer", "CNN", "RNN", "Decision Trees"], "correct_answer": "Transformer", "explanation": "ट्रांसफॉर्मर आर्किटेक्चर और सेल्फ-अटेंशन मेकैनिज्म आधुनिक LLMs का आधार है।", "difficulty": "easy"},
+                    {"question": "कंप्यूटर विज़न में छवियों के वर्गीकरण के लिए सबसे लोकप्रिय न्यूरल नेटवर्क कौन सा है?", "options": ["CNN", "RNN", "ANN", "KNN"], "correct_answer": "CNN", "explanation": "कन्वोल्यूशनल न्यूरल नेटवर्क (CNN) इमेज और वीडियो प्रोसेसिंग के लिए प्रसिद्ध है।", "difficulty": "medium"},
+                    {"question": "ChatGPT को किस कंपनी ने विकसित किया है?", "options": ["OpenAI", "Google", "Microsoft", "Meta"], "correct_answer": "OpenAI", "explanation": "ChatGPT को OpenAI कंपनी द्वारा विकसित किया गया है।", "difficulty": "medium"},
+                    {"question": "Reinforcement Learning में एजेंट पर्यावरण से सीखने के लिए किस पर निर्भर करता है?", "options": ["पुरस्कार और दंड (Rewards & Penalties)", "लेबल किए गए चित्र", "SQL क्वेरी", "मैन्युअल कोडिंग"], "correct_answer": "पुरस्कार और दंड (Rewards & Penalties)", "explanation": "सुदृढ़ीकरण शिक्षण में एजेंट सही कदम पर रिवॉर्ड और गलत कदम पर पेनाल्टी से सीखता है।", "difficulty": "hard"}
+                ]
+            },
+            "tech": {
+                "true_false": [
+                    {"question": "RAM एक वोलाटाइल (अस्थायी) मेमोरी है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, कंप्यूटर बंद होते ही RAM में मौजूद सारा डेटा नष्ट हो जाता है।", "difficulty": "easy"},
+                    {"question": "SSD, पारंपरिक HDD की तुलना में बहुत तेज़ गति प्रदान करती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, सॉलिड स्टेट ड्राइव (SSD) में कोई मूविंग पार्ट नहीं होता और यह तेज़ होती है।", "difficulty": "easy"},
+                    {"question": "ऑपरेटिंग सिस्टम एक एप्लिकेशन सॉफ्टवेयर का उदाहरण है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "ऑपरेटिंग सिस्टम एक 'सिस्टम सॉफ्टवेयर' है, एप्लिकेशन सॉफ्टवेयर नहीं।", "difficulty": "medium"},
+                    {"question": "HTTPS में 'S' का अर्थ 'Secure' (सुरक्षित) होता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "HTTPS का मतलब Hypertext Transfer Protocol Secure है।", "difficulty": "medium"},
+                    {"question": "IPv6 पता 128 बिट्स लंबा होता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "IPv4 32 बिट्स का होता है जबकि IPv6 128 बिट्स का होता है।", "difficulty": "hard"}
+                ],
+                "mcq": [
+                    {"question": "कंप्यूटर का 'मस्तिष्क' (Brain) किसे कहा जाता है?", "options": ["CPU", "RAM", "Hard Disk", "Monitor"], "correct_answer": "CPU", "explanation": "सेंट्रल प्रोसेसिंग यूनिट (CPU) को कंप्यूटर का दिमाग कहा जाता है।", "difficulty": "easy"},
+                    {"question": "कंप्यूटर का मुख्य सर्किट बोर्ड कौन सा है जिससे सभी घटक जुड़ते हैं?", "options": ["Motherboard", "Graphic Card", "Hard Drive", "Power Supply"], "correct_answer": "Motherboard", "explanation": "मदरबोर्ड मुख्य बोर्ड है जो सीपीयू, रैम और अन्य हिस्सों को जोड़ता है।", "difficulty": "easy"},
+                    {"question": "इंटरनेट पर सुरक्षित डेटा संचार के लिए किस प्रोटोकॉल का उपयोग किया जाता है?", "options": ["HTTPS", "FTP", "SMTP", "Telnet"], "correct_answer": "HTTPS", "explanation": "HTTPS एन्क्रिप्शन का उपयोग करके सुरक्षित ब्राउज़िंग सुनिश्चित करता है।", "difficulty": "medium"},
+                    {"question": "कंप्यूटर डेटा की सबसे छोटी इकाई कौन सी है?", "options": ["Bit", "Byte", "Kilobyte", "Nibble"], "correct_answer": "Bit", "explanation": "एक बिट (0 या 1) कंप्यूटर डेटा की सबसे छोटी इकाई है। 8 बिट = 1 बाइट।", "difficulty": "medium"},
+                    {"question": "DNS का पूर्ण रूप क्या है?", "options": ["Domain Name System", "Dynamic Network Service", "Digital Name Server", "Data Node Security"], "correct_answer": "Domain Name System", "explanation": "DNS डोमेन नाम को IP पते में अनुवादित करता है।", "difficulty": "hard"}
+                ]
+            },
+            "cricket": {
+                "true_false": [
+                    {"question": "वनडे क्रिकेट विश्व कप हर चार साल में आयोजित किया जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, ICC पुरुष क्रिकेट विश्व कप प्रत्येक चार वर्ष में होता है।", "difficulty": "easy"},
+                    {"question": "टी20 मैच में प्रत्येक टीम को अधिकतम 20 ओवर खेलने को मिलते हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, टी20 का अर्थ ही बीस-बीस ओवरों का मैच होता है।", "difficulty": "easy"},
+                    {"question": "क्रिकेट में LBW का पूर्ण रूप 'Leg Before Wicket' है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, जब गेंद विकेट के आगे पैर पर लगती है तो LBW आउट दिया जाता है।", "difficulty": "medium"},
+                    {"question": "भारत ने अपना पहला क्रिकेट विश्व कप 2011 में जीता था।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "भारत ने पहला विश्व कप 1983 में कपिल देव की कप्तानी में जीता था।", "difficulty": "medium"},
+                    {"question": "टेस्ट क्रिकेट में फॉलो-ऑन देने के लिए पहली पारी में कम से कम 200 रनों की बढ़त आवश्यक है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "5 दिवसीय टेस्ट में 200 रन या अधिक की बढ़त पर फॉलो-ऑन दिया जा सकता है।", "difficulty": "hard"}
+                ],
+                "mcq": [
+                    {"question": "क्रिकेट में 'शतक' का क्या अर्थ है?", "options": ["100 रन", "50 रन", "150 रन", "200 रन"], "correct_answer": "100 रन", "explanation": "क्रिकेट में किसी बल्लेबाज द्वारा 100 रन बनाना शतक कहलाता है।", "difficulty": "easy"},
+                    {"question": "क्रिकेट के एक ओवर में कितनी वैध गेंदें फेंकी जाती हैं?", "options": ["6", "5", "8", "4"], "correct_answer": "6", "explanation": "एक मानक क्रिकेट ओवर में 6 वैध गेंदें होती हैं।", "difficulty": "easy"},
+                    {"question": "2023 आईसीसी पुरुष क्रिकेट विश्व कप का खिताब किस देश ने जीता?", "options": ["ऑस्ट्रेलिया", "भारत", "इंग्लैंड", "दक्षिण अफ्रीका"], "correct_answer": "ऑस्ट्रेलिया", "explanation": "ऑस्ट्रेलिया ने 2023 के फाइनल में भारत को हराकर विश्व कप जीता था।", "difficulty": "medium"},
+                    {"question": "विश्व क्रिकेट में 'क्रिकेट का भगवान' किसे कहा जाता है?", "options": ["सचिन तेंदुलकर", "विराट कोहली", "एमएस धोनी", "कपिल देव"], "correct_answer": "सचिन तेंदुलकर", "explanation": "सचिन तेंदुलकर को उनके असाधारण रिकॉर्ड के लिए यह उपाधि दी गई है।", "difficulty": "medium"},
+                    {"question": "क्रिकेट की वैश्विक सर्वोच्च नियामक संस्था कौन सी है?", "options": ["ICC", "BCCI", "FIFA", "IOC"], "correct_answer": "ICC", "explanation": "इंटरनेशनल क्रिकेट काउंसिल (ICC) क्रिकेट की शीर्ष संस्था है।", "difficulty": "hard"}
+                ]
+            },
+            "sports": {
+                "true_false": [
+                    {"question": "फुटबॉल की एक टीम में मैदान पर 11 खिलाड़ी होते हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, प्रत्येक फुटबॉल टीम में मैदान पर 11 खिलाड़ी खेलते हैं।", "difficulty": "easy"},
+                    {"question": "ग्रीष्मकालीन ओलंपिक खेल प्रत्येक 4 वर्ष में आयोजित किए जाते हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, ओलंपिक खेल चार वर्ष के अंतराल पर आयोजित होते हैं।", "difficulty": "easy"},
+                    {"question": "नीरज चोपड़ा बैडमिंटन खेल से संबंधित हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "नीरज चोपड़ा भाला फेंक (Javelin Throw) के ओलंपिक स्वर्ण पदक विजेता हैं।", "difficulty": "medium"},
+                    {"question": "टेनिस में स्कोर '0' को 'Love' कहा जाता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, टेनिस स्कोरिंग प्रणाली में शून्य स्कोर को Love कहा जाता है।", "difficulty": "medium"},
+                    {"question": "शतरंज की बिसात पर कुल 64 वर्ग (खानें) होते हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "शतरंज बोर्ड 8x8 ग्रिड का होता है जिसमें कुल 64 सफेद और काले वर्ग होते हैं।", "difficulty": "hard"}
+                ],
+                "mcq": [
+                    {"question": "2022 फीफा फुटबॉल विश्व कप की विजेता टीम कौन सी थी?", "options": ["आर्जेन्टीना", "फ्रांस", "ब्राजील", "क्रोएशिया"], "correct_answer": "आर्जेन्टीना", "explanation": "लियोनेल मेस्सी की कप्तानी में आर्जेन्टीना ने विश्व कप जीता था।", "difficulty": "easy"},
+                    {"question": "भारत का राष्ट्रीय खेल पारंपरिक रूप से किसे माना जाता है?", "options": ["हॉकी", "क्रिकेट", "कबड्डी", "फुटबॉल"], "correct_answer": "हॉकी", "explanation": "भारत में फील्ड हॉकी को पारंपरिक रूप से राष्ट्रीय खेल का दर्जा दिया जाता है।", "difficulty": "easy"},
+                    {"question": "एक मानक मैराथन दौड़ की कुल दूरी कितनी होती है?", "options": ["42.195 किमी", "21.1 किमी", "50 किमी", "10 किमी"], "correct_answer": "42.195 किमी", "explanation": "मैराथन की आधिकारिक दूरी 42.195 किलोमीटर (26.2 मील) होती है।", "difficulty": "medium"},
+                    {"question": "बास्केटबॉल मैच में कोर्ट पर प्रत्येक टीम के कितने खिलाड़ी खेलते हैं?", "options": ["5", "6", "7", "11"], "correct_answer": "5", "explanation": "बास्केटबॉल में दोनों टीमों से 5-5 खिलाड़ी कोर्ट पर खेलते हैं।", "difficulty": "medium"},
+                    {"question": "ओलंपिक ध्वज में कितने छल्ले (Rings) होते हैं?", "options": ["5", "4", "6", "7"], "correct_answer": "5", "explanation": "ये 5 छल्ले दुनिया के पांच महाद्वीपों के मिलन का प्रतीक हैं।", "difficulty": "hard"}
+                ]
+            },
+            "gk": {
+                "true_false": [
+                    {"question": "माउंट एवरेस्ट दुनिया की सबसे ऊंची पर्वत चोटी है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, माउंट एवरेस्ट (8848.86 मीटर) दुनिया का सबसे ऊंचा शिखर है।", "difficulty": "easy"},
+                    {"question": "भारत 15 अगस्त 1947 को ब्रिटिश शासन से स्वतंत्र हुआ था।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, 15 अगस्त को भारत अपना स्वतंत्रता दिवस मनाता है।", "difficulty": "easy"},
+                    {"question": "क्षेत्रफल की दृष्टि से भारत दुनिया का सबसे बड़ा देश है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "क्षेत्रफल में रूस दुनिया का सबसे बड़ा देश है, भारत सातवें स्थान पर है।", "difficulty": "medium"},
+                    {"question": "भारतीय संविधान के मुख्य निर्माता डॉ. बी.आर. अंबेडकर थे।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "डॉ. अंबेडकर संविधान सभा की प्रारूप समिति के अध्यक्ष थे।", "difficulty": "medium"},
+                    {"question": "विश्व का सबसे बड़ा महासागर प्रशांत महासागर है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "प्रशांत महासागर पृथ्वी का सबसे विशाल और गहरा महासागर है।", "difficulty": "hard"}
+                ],
+                "mcq": [
+                    {"question": "भारत की राजधानी क्या है?", "options": ["नई दिल्ली", "मुंबई", "कोलकाता", "चेन्नई"], "correct_answer": "नई दिल्ली", "explanation": "नई दिल्ली भारत की आधिकारिक राजधानी है।", "difficulty": "easy"},
+                    {"question": "भारत की राष्ट्रीय नदी कौन सी है?", "options": ["गंगा", "यमुना", "ब्रह्मपुत्र", "गोदावरी"], "correct_answer": "गंगा", "explanation": "गंगा भारत की राष्ट्रीय नदी और सबसे पवित्र मानी जाने वाली नदी है।", "difficulty": "easy"},
+                    {"question": "विश्व का सबसे बड़ा महाद्वीप कौन सा है?", "options": ["एशिया", "अफ्रीका", "यूरोप", "उत्तरी अमेरिका"], "correct_answer": "एशिया", "explanation": "एशिया क्षेत्रफल और जनसंख्या दोनों में विश्व का सबसे बड़ा महाद्वीप है।", "difficulty": "medium"},
+                    {"question": "भारत के राष्ट्रगान 'जन गण मन' के रचयिता कौन हैं?", "options": ["रवींद्रनाथ टैगोर", "बंकिम चंद्र चट्टोपाध्याय", "सरोजिनी नायडू", "सुभाष चंद्र बोस"], "correct_answer": "रवींद्रनाथ टैगोर", "explanation": "रवींद्रनाथ टैगोर ने भारत का राष्ट्रगान रचा था।", "difficulty": "medium"},
+                    {"question": "संयुक्त राष्ट्र (UN) का मुख्यालय कहाँ स्थित है?", "options": ["न्यूयॉर्क", "जिनेवा", "लंदन", "पेरिस"], "correct_answer": "न्यूयॉर्क", "explanation": "संयुक्त राष्ट्र का मुख्य मुख्यालय न्यूयॉर्क शहर (USA) में स्थित है।", "difficulty": "hard"}
                 ]
             },
             "space": {
                 "true_false": [
-                    {"question": "सूर्य एक तारा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, सूर्य हमारे सौरमंडल के केंद्र में स्थित एक तारा है।", "difficulty": "easy"}
+                    {"question": "सूर्य हमारे सौरमंडल के केंद्र में स्थित एक तारा है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, सूर्य एक मध्यम आकार का पीला तारा है जो सौरमंडल का केंद्र है।", "difficulty": "easy"},
+                    {"question": "पृथ्वी सूर्य के चारों ओर एक चक्कर लगभग 365 दिन में पूरा करती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, पृथ्वी की एक परिक्रमा में लगभग 365.25 दिन लगते हैं।", "difficulty": "easy"},
+                    {"question": "चंद्रमा का अपना स्वयं का प्रकाश होता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "चंद्रमा सूर्य के प्रकाश को परावर्तित करके चमकता है।", "difficulty": "medium"},
+                    {"question": "शुक्र (Venus) हमारे सौरमंडल का सबसे गर्म ग्रह है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "घने कार्बन डाइऑक्साइड वातावरण के कारण शुक्र सबसे गर्म ग्रह है।", "difficulty": "medium"},
+                    {"question": "प्रकाश की गति अंतरिक्ष में लगभग 3,00,000 किलोमीटर प्रति सेकंड होती है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, प्रकाश की गति लगभग 299,792 किमी/सेकंड होती है।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "हमारे सौरमंडल का सबसे बड़ा ग्रह कौन सा है?", "options": ["शनि", "बृहस्पति", "पृथ्वी", "मंगल"], "correct_answer": "बृहस्पति", "explanation": "बृहस्पति सौरमंडल का सबसे विशाल ग्रह है।", "difficulty": "easy"}
+                    {"question": "हमारे सौरमंडल का सबसे बड़ा ग्रह कौन सा है?", "options": ["बृहस्पति (Jupiter)", "शनि (Saturn)", "पृथ्वी (Earth)", "मंगल (Mars)"], "correct_answer": "बृहस्पति (Jupiter)", "explanation": "बृहस्पति सौरमंडल का सबसे विशाल और भारी ग्रह है।", "difficulty": "easy"},
+                    {"question": "'लाल ग्रह' (Red Planet) के नाम से किस ग्रह को जाना जाता है?", "options": ["मंगल (Mars)", "बुध (Mercury)", "शुक्र (Venus)", "बृहस्पति (Jupiter)"], "correct_answer": "मंगल (Mars)", "explanation": "आयरन ऑक्साइड की उपस्थिति के कारण मंगल लाल दिखाई देता है।", "difficulty": "easy"},
+                    {"question": "चंद्रमा की सतह पर कदम रखने वाले पहले मानव कौन थे?", "options": ["नील आर्मस्ट्रांग", "यूरी गगारिन", "बज़ एल्ड्रिन", "राकेश शर्मा"], "correct_answer": "नील आर्मस्ट्रांग", "explanation": "नील आर्मस्ट्रांग ने 1969 में अपोलो 11 मिशन के दौरान कदम रखा था।", "difficulty": "medium"},
+                    {"question": "भारतीय अंतरिक्ष अनुसंधान संगठन (ISRO) का मुख्यालय कहाँ स्थित है?", "options": ["बेंगलुरु", "नई दिल्ली", "मुंबई", "श्रीहरिकोटा"], "correct_answer": "बेंगलुरु", "explanation": "इसरो का मुख्य प्रशासनिक मुख्यालय बेंगलुरु में स्थित है।", "difficulty": "medium"},
+                    {"question": "हमारी अपनी आकाशगंगा का क्या नाम है?", "options": ["मिल्की वे (दुग्ध मेखला)", "एंड्रोमेडा", "व्हर्लपूल", "सोम्ब्रेरो"], "correct_answer": "मिल्की वे (दुग्ध मेखला)", "explanation": "हमारा सौरमंडल मिल्की वे (Milky Way) आकाशगंगा में स्थित है।", "difficulty": "hard"}
                 ]
             },
             "history": {
                 "true_false": [
-                    {"question": "भारत ने वर्ष 1947 में स्वतंत्रता प्राप्त की थी।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, भारत को 15 अगस्त 1947 को आजादी मिली थी।", "difficulty": "medium"}
+                    {"question": "भारत ने 15 अगस्त 1947 को स्वतंत्रता प्राप्त की थी।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, भारत को 15 अगस्त 1947 को ब्रिटिश हुकूमत से आजादी मिली थी।", "difficulty": "easy"},
+                    {"question": "सम्राट अशोक मौर्य वंश के महान शासक थे।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, सम्राट अशोक बिंदुसार के पुत्र और मौर्य वंश के सम्राट थे।", "difficulty": "easy"},
+                    {"question": "प्लासी का ऐतिहासिक युद्ध 1757 में लड़ा गया था।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, रॉबर्ट क्लाइव और सिराजुद्दौला के बीच जून 1757 में प्लासी का युद्ध हुआ था।", "difficulty": "medium"},
+                    {"question": "महात्मा गांधी ने दांडी नमक सत्याग्रह यात्रा 1942 में की थी।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "दांडी यात्रा 1930 में हुई थी, जबकि 1942 में भारत छोड़ो आंदोलन हुआ था।", "difficulty": "medium"},
+                    {"question": "सिंधु घाटी सभ्यता एक कांस्य युगीन (Bronze Age) सभ्यता थी।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, हड़प्पा और सिंधु सभ्यता कांस्य युग की प्रमुख सभ्यताओं में गिनी जाती है।", "difficulty": "hard"}
                 ],
                 "mcq": [
-                    {"question": "भारत के 'लौह पुरुष' के रूप में किसे जाना जाता है?", "options": ["महात्मा गांधी", "सरदार वल्लभभाई पटेल", "जवाहरलाल नेहरू", "सुभाष चंद्र बोस"], "correct_answer": "सरदार वल्लभभाई पटेल", "explanation": "सरदार वल्लभभाई पटेल को भारत का लौह पुरुष कहा जाता है।", "difficulty": "easy"}
+                    {"question": "भारत के 'लौह पुरुष' (Iron Man) के रूप में किसे जाना जाता है?", "options": ["सरदार वल्लभभाई पटेल", "महात्मा गांधी", "जवाहरलाल नेहरू", "सुभाष चंद्र बोस"], "correct_answer": "सरदार वल्लभभाई पटेल", "explanation": "रियासतों के एकीकरण में महत्वपूर्ण भूमिका के कारण उन्हें लौह पुरुष कहा जाता है।", "difficulty": "easy"},
+                    {"question": "स्वतंत्र भारत के प्रथम प्रधानमंत्री कौन थे?", "options": ["पंडित जवाहरलाल नेहरू", "डॉ. राजेंद्र प्रसाद", "सरदार पटेल", "लाल बहादुर शास्त्री"], "correct_answer": "पंडित जवाहरलाल नेहरू", "explanation": "पंडित जवाहरलाल नेहरू ने 15 अगस्त 1947 को प्रथम प्रधानमंत्री का पद संभाला था।", "difficulty": "easy"},
+                    {"question": "आगरा में प्रसिद्ध ताजमहल का निर्माण किस मुगल बादशाह ने करवाया था?", "options": ["शाहजहाँ", "अकबर", "जहाँगीर", "बाबर"], "correct_answer": "शाहजहाँ", "explanation": "शाहजहाँ ने अपनी बेगम मुमताज महल की याद में ताजमहल बनवाया था।", "difficulty": "medium"},
+                    {"question": "1857 का प्रथम भारतीय स्वतंत्रता संग्राम कहाँ से शुरू हुआ था?", "options": ["मेरठ", "झाँसी", "दिल्ली", "कानपुर"], "correct_answer": "मेरठ", "explanation": "10 मई 1857 को मेरठ छावनी से सिपाहियों ने विद्रोह शुरू किया था।", "difficulty": "medium"},
+                    {"question": "मौर्य साम्राज्य की नींव चाणक्य की सहायता से किसने रखी थी?", "options": ["चंद्रगुप्त मौर्य", "अशोक", "बिंदुसार", "हर्षवर्धन"], "correct_answer": "चंद्रगुप्त मौर्य", "explanation": "चंद्रगुप्त मौर्य ने चाणक्य के मार्गदर्शन में मौर्य वंश स्थापित किया था।", "difficulty": "hard"}
                 ]
             }
         }
@@ -485,17 +580,16 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
     
     # Get questions based on Language -> Topic -> Type
     lang_db = database.get(lang_lower, database["english"])
-    topic_db = lang_db.get(topic_cat, lang_db["python"])
+    topic_db = lang_db.get(topic_cat, lang_db.get("python", list(lang_db.values())[0]))
     
     if type_lower == "mixed":
         import random
         questions_list = topic_db.get("true_false", []) + topic_db.get("mcq", [])
-        # Shuffle the mixed pool
         random.shuffle(questions_list)
     else:
         questions_list = topic_db.get(type_lower, topic_db.get("mcq", []))
     
-    # Filter questions by difficulty (start with requested difficulty)
+    # Filter questions by difficulty
     difficulty_lower = difficulty.lower().strip()
     selected_questions = [q for q in questions_list if q.get("difficulty", "medium") == difficulty_lower]
     
@@ -514,7 +608,7 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
             if len(selected_questions) >= count:
                 break
                 
-    # If we still need more unique questions, pull from 'gk' (General Knowledge) category of the same language
+    # If we still need more unique questions, pull from 'gk' (General Knowledge) category of the SAME language
     if len(selected_questions) < count:
         gk_db = lang_db.get("gk", {})
         if type_lower == "mixed":
@@ -528,24 +622,128 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
                 if len(selected_questions) >= count:
                     break
 
-    # If still not enough, fall back to general database defaults
+    # If still not enough, fall back strictly within the SAME language first
     if len(selected_questions) < count:
-        fallback_db = database["english"]["python"]["mcq"]
-        for q in fallback_db:
-            if q not in selected_questions:
-                selected_questions.append(q)
-                if len(selected_questions) >= count:
-                    break
+        for cat_name, cat_data in lang_db.items():
+            pool = cat_data.get(type_lower, cat_data.get("mcq", [])) if type_lower != "mixed" else (cat_data.get("true_false", []) + cat_data.get("mcq", []))
+            for q in pool:
+                if q not in selected_questions:
+                    selected_questions.append(q)
+                    if len(selected_questions) >= count:
+                        break
+            if len(selected_questions) >= count:
+                break
 
-    # Construct the final list. Only cycle as an absolute last resort.
+    # Construct the final list. Cycle existing selected questions if needed
     output_questions = []
     if selected_questions:
         for i in range(count):
             output_questions.append(selected_questions[i % len(selected_questions)])
     else:
-        output_questions = database["english"]["python"]["mcq"][:count]
+        fallback_pool = lang_db.get("gk", {}).get("mcq", database["english"]["python"]["mcq"])
+        output_questions = [fallback_pool[i % len(fallback_pool)] for i in range(count)]
         
     return output_questions
+
+def sanitize_and_validate_questions(questions, language="English", quiz_type="mcq", target_count=5):
+    """
+    Sanitizes questions returned by AI models or mock generators:
+    - Strips option markers like 'A. ', 'B) ', '1. ', 'क. '
+    - Resolves single letter/index correct_answers ('A', 'B', '1', 'क') to actual option strings
+    - Ensures correct_answer strictly matches an item in options
+    - Normalizes True/False options and answers to exact language labels
+    """
+    import re
+    if not questions or not isinstance(questions, list):
+        return []
+    
+    is_hindi = language.lower() == "hindi"
+    t_label = "सत्य" if is_hindi else "True"
+    f_label = "असत्य" if is_hindi else "False"
+    
+    letter_map = {
+        "a": 0, "b": 1, "c": 2, "d": 3, "e": 4,
+        "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
+        "क": 0, "ख": 1, "ग": 2, "घ": 3,
+        "option a": 0, "option b": 1, "option c": 2, "option d": 3,
+        "option 1": 0, "option 2": 1, "option 3": 2, "option 4": 3,
+        "विकल्प a": 0, "विकल्प b": 1, "विकल्प c": 2, "विकल्प d": 3,
+        "विकल्प 1": 0, "विकल्प 2": 1, "विकल्प 3": 2, "विकल्प 4": 3,
+        "विकल्प क": 0, "विकल्प ख": 1, "विकल्प ग": 2, "विकल्प घ": 3,
+        "उत्तर a": 0, "उत्तर b": 1, "उत्तर c": 2, "उत्तर d": 3,
+    }
+
+    clean_questions = []
+    for item in questions:
+        if not isinstance(item, dict):
+            continue
+        q_text = str(item.get("question", "")).strip()
+        raw_options = item.get("options", [])
+        raw_correct = str(item.get("correct_answer", "")).strip()
+        raw_explanation = str(item.get("explanation", "")).strip()
+        diff = item.get("difficulty", "medium")
+
+        if not q_text or not raw_options:
+            continue
+
+        # Clean options: remove prefixes like "A. ", "A) ", "(A) ", "1. ", "क. ", "ख) "
+        cleaned_opts = []
+        for opt in raw_options:
+            s_opt = str(opt).strip()
+            s_opt_clean = re.sub(r'^(?:[\(\[]?[A-Da-d1-4कखगघ][\.\)\-\]]\s*|\b(?:option|विकल्प)\s+[A-Da-d1-4कखगघ]\s*[:\.\-]?\s*)', '', s_opt, flags=re.IGNORECASE).strip()
+            cleaned_opts.append(s_opt_clean if s_opt_clean else s_opt)
+
+        # Detect question type (True/False vs MCQ)
+        is_tf = (quiz_type == "true_false") or len(cleaned_opts) == 2
+
+        if is_tf:
+            # Normalize True/False options and correct_answer
+            cleaned_opts = [t_label, f_label]
+            lower_correct = raw_correct.lower().strip()
+            if any(w in lower_correct for w in ["true", "सत्य", "सही", "सच्चा"]):
+                raw_correct = t_label
+            elif any(w in lower_correct for w in ["false", "असत्य", "गलत", "झूठा"]):
+                raw_correct = f_label
+            else:
+                raw_correct = t_label
+        else:
+            # Handle correct_answer mapping for MCQ
+            clean_correct_lookup = re.sub(r'[\.\)\-\]]', '', raw_correct).strip().lower()
+            if clean_correct_lookup in letter_map and letter_map[clean_correct_lookup] < len(cleaned_opts):
+                raw_correct = cleaned_opts[letter_map[clean_correct_lookup]]
+            else:
+                # Strip prefix from correct_answer if present
+                clean_ans = re.sub(r'^(?:[\(\[]?[A-Da-d1-4कखगघ][\.\)\-\]]\s*|\b(?:option|विकल्प)\s+[A-Da-d1-4कखगघ]\s*[:\.\-]?\s*)', '', raw_correct, flags=re.IGNORECASE).strip()
+                # Try exact match with cleaned_opts
+                matched = False
+                for opt in cleaned_opts:
+                    if opt.lower() == clean_ans.lower() or opt.lower() == raw_correct.lower():
+                        raw_correct = opt
+                        matched = True
+                        break
+                if not matched:
+                    # Substring match
+                    for opt in cleaned_opts:
+                        if clean_ans and (clean_ans.lower() in opt.lower() or opt.lower() in clean_ans.lower()):
+                            raw_correct = opt
+                            matched = True
+                            break
+                if not matched:
+                    raw_correct = cleaned_opts[0] if cleaned_opts else "Unknown"
+
+        # Ensure explanation is valid
+        if not raw_explanation:
+            raw_explanation = f"सही उत्तर '{raw_correct}' है।" if is_hindi else f"The correct answer is '{raw_correct}'."
+
+        clean_questions.append({
+            "question": q_text,
+            "options": cleaned_opts,
+            "correct_answer": raw_correct,
+            "explanation": raw_explanation,
+            "difficulty": diff
+        })
+
+    return clean_questions[:target_count]
 
 def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source_text):
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -574,6 +772,10 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
     
     Question formats:
     - {type_instruction}
+    
+    STRICT Rules for options and correct_answer:
+    - "options": Must be a JSON array of strings containing ONLY the answer choices. DO NOT include prefixes like "A.", "B.", "1.", "क." inside the option strings. Example: ["विकल्प 1", "विकल्प 2", "विकल्प 3", "विकल्प 4"].
+    - "correct_answer": MUST be the exact matching string from the "options" array. NEVER return "A", "B", "C", "D" or an index.
     
     Output Format:
     You must return a valid JSON object containing a single key "questions" which is a list of question objects.
@@ -605,10 +807,12 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
         - The quiz topic is: "{topic}".
         """
 
-    models_to_try = ["qwen/qwen3.6-27b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-8b-8192"]
+    # Active and verified models on Groq
+    models_to_try = ["qwen/qwen3.8-27b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound-mini"]
     import urllib.request
     import urllib.error
     import json
+    import re
 
     for model in models_to_try:
         payload = {
@@ -634,11 +838,21 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
             with urllib.request.urlopen(req, timeout=30) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 content = res_data['choices'][0]['message']['content'].strip()
+                # Clean markdown code blocks if present
+                if content.startswith("```"):
+                    content = re.sub(r'^```(?:json)?\s*', '', content, flags=re.IGNORECASE)
+                    content = re.sub(r'\s*```$', '', content)
+                content = content.strip()
                 quiz_data = json.loads(content)
+                raw_qs = []
                 if isinstance(quiz_data, dict) and "questions" in quiz_data:
-                    return quiz_data["questions"]
+                    raw_qs = quiz_data["questions"]
                 elif isinstance(quiz_data, list):
-                    return quiz_data
+                    raw_qs = quiz_data
+                if raw_qs:
+                    sanitized = sanitize_and_validate_questions(raw_qs, language, quiz_type, count)
+                    if sanitized:
+                        return sanitized
         except Exception as e:
             logging.warning(f"Groq generation failed with model {model}: {e}")
             continue
@@ -822,11 +1036,12 @@ def generate_quiz():
                     raise jde2
             
             if isinstance(quiz_data, list) and len(quiz_data) > 0:
+                sanitized_gemini = sanitize_and_validate_questions(quiz_data, language, quiz_type, count)
                 logging.info(f"Quiz successfully generated using Gemini API in {language}.")
                 return jsonify({
                      "success": True,
                      "mode": "gemini",
-                     "questions": quiz_data
+                     "questions": sanitized_gemini if sanitized_gemini else quiz_data
                 })
             else:
                 logging.error("Gemini response was not a valid list. Falling back to mock data.")
@@ -847,10 +1062,11 @@ def generate_quiz():
     if not mock_questions:
         mock_questions = get_mock_quiz(topic, difficulty, count, language, quiz_type)
         
+    sanitized_mock = sanitize_and_validate_questions(mock_questions, language, quiz_type, count)
     return jsonify({
         "success": True,
         "mode": mode,
-        "questions": mock_questions,
+        "questions": sanitized_mock if sanitized_mock else mock_questions,
         "message": msg
     })
 
