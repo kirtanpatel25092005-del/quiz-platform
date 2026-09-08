@@ -74,9 +74,19 @@
             
             <!-- VIEW 1: BROWSE QUIZZES (GRID SYSTEM MATCHING REFERENCE SCREENSHOT) -->
             <section id="browse-view" class="view-panel active">
-                <div class="view-header">
-                    <h2>Browse Quizzes</h2>
-                    <p>Pick a category and test your expertise with 5 challenging questions.</p>
+                <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h2>Browse Quizzes</h2>
+                        <p>Pick a category and test your expertise with 5 challenging questions.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; background: white; padding: 6px 14px; border: 1px solid var(--card-border); border-radius: 9999px; box-shadow: var(--shadow-premium);">
+                        <i class="fa-solid fa-language" style="color: var(--primary-color);"></i>
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Language:</span>
+                        <select id="browse-language-select" style="border: none; outline: none; font-size: 13px; font-weight: 700; color: var(--text-main); background: transparent; cursor: pointer;">
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi (हिन्दी)</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="quizzes-grid">

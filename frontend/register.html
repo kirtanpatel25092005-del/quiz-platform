@@ -93,8 +93,10 @@
                 return;
             }
 
+            const API_BASE = (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null') ? 'http://127.0.0.1:5000' : '';
+
             try {
-                const response = await fetch('/api/register', {
+                const response = await fetch(`${API_BASE}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, email, password })
@@ -114,7 +116,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                msgBox.textContent = 'An error occurred. Please check your connection.';
+                msgBox.textContent = 'An error occurred. Please check your connection or make sure the Flask backend is running on port 5000.';
                 msgBox.style.display = 'block';
                 msgBox.className = 'error-msg';
             }

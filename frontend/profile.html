@@ -140,9 +140,11 @@
             loadProfile(user.username);
         });
 
+        const API_BASE = (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null') ? 'http://127.0.0.1:5000' : '';
+
         async function loadProfile(username) {
             try {
-                const response = await fetch(`/api/get-profile?username=${username}`);
+                const response = await fetch(`${API_BASE}/api/get-profile?username=${encodeURIComponent(username)}`);
                 const result = await response.json();
 
                 if (result.success) {

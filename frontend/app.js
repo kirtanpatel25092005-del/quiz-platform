@@ -180,14 +180,23 @@ function setupEventListeners() {
         generateQuiz();
     });
 
-    // Quiz Language Preference Sync
+    // Quiz Language Preference Sync (Both Browse view and Custom Setup view)
+    const browseLangSelect = document.getElementById('browse-language-select');
+    const savedLang = localStorage.getItem('quiz_language') || 'English';
+    
     if (languageSelect) {
-        const savedLang = localStorage.getItem('quiz_language');
-        if (savedLang) {
-            languageSelect.value = savedLang;
-        }
+        languageSelect.value = savedLang;
         languageSelect.addEventListener('change', () => {
             localStorage.setItem('quiz_language', languageSelect.value);
+            if (browseLangSelect) browseLangSelect.value = languageSelect.value;
+        });
+    }
+
+    if (browseLangSelect) {
+        browseLangSelect.value = savedLang;
+        browseLangSelect.addEventListener('change', () => {
+            localStorage.setItem('quiz_language', browseLangSelect.value);
+            if (languageSelect) languageSelect.value = browseLangSelect.value;
         });
     }
 

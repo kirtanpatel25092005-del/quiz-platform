@@ -549,11 +549,13 @@
             }
         });
 
+        const API_BASE = (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null') ? 'http://127.0.0.1:5000' : '';
+
         // Load data from Backend API
         async function loadDashboardData(secret) {
             try {
                 // Add cache buster parameter to prevent browsers from caching the GET request
-                const response = await fetch(`/api/admin-data?secret=${encodeURIComponent(secret)}&_=${Date.now()}`);
+                const response = await fetch(`${API_BASE}/api/admin-data?secret=${encodeURIComponent(secret)}&_=${Date.now()}`);
                 if (!response.ok) {
                     throw new Error("Unauthorized access or server error");
                 }

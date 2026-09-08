@@ -41,6 +41,8 @@
     </div>
 
     <script>
+        const API_BASE = (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null') ? 'http://127.0.0.1:5000' : '';
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
@@ -48,7 +50,7 @@
             const errorMsg = document.getElementById('error-msg');
 
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch(`${API_BASE}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -65,7 +67,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                errorMsg.textContent = 'An error occurred. Please check your connection.';
+                errorMsg.textContent = 'An error occurred. Please check your connection or make sure the Flask backend is running on port 5000.';
                 errorMsg.style.display = 'block';
             }
         });

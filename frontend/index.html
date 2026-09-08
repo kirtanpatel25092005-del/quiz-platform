@@ -107,11 +107,11 @@
         .cta-button {
             background: #2563eb;
             color: white;
-            padding: 18px 56px;
+            padding: 16px 44px;
             border-radius: 100px;
             text-decoration: none;
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             transition: all 0.3s ease;
             box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.3);
             display: inline-flex;
@@ -124,6 +124,47 @@
             background: #1d4ed8;
             box-shadow: 0 15px 40px -5px rgba(37, 99, 235, 0.4);
             color: white;
+            text-decoration: none;
+        }
+
+        .cta-button-secondary {
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 16px 40px;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15rem;
+            border: 1px solid #cbd5e1;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cta-button-secondary:hover {
+            transform: translateY(-3px);
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #94a3b8;
+            text-decoration: none;
+        }
+
+        .nav-auth-btn {
+            background: #ffffff;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-auth-btn:hover {
+            background: #2563eb;
+            color: #ffffff;
             text-decoration: none;
         }
 
@@ -149,6 +190,16 @@
             .hero-simple p {
                 font-size: 1.1rem;
             }
+
+            .hero-actions {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .cta-button, .cta-button-secondary {
+                width: 100%;
+                padding: 14px 20px;
+            }
         }
     </style>
 </head>
@@ -163,13 +214,17 @@
             </div>
             SMART QUIZ PLATFORM
         </a>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <a href="login.html" class="nav-auth-btn">Sign In</a>
+        </div>
     </nav>
 
     <main class="hero-simple">
         <h1>Test Your <span class="highlight">Knowledge</span></h1>
         <p>Challenge yourself, compete with friends, and track your true potential directly on the platform.</p>
-        <div class="hero-actions" style="display: flex; gap: 16px; justify-content: center; width: 100%;">
-            <a href="register.html" class="cta-button">Start Quiz &rarr;</a>
+        <div class="hero-actions" style="display: flex; gap: 16px; justify-content: center; width: 100%; flex-wrap: wrap;">
+            <a href="register.html" class="cta-button">Get Started &rarr;</a>
+            <a href="login.html" class="cta-button-secondary">Sign In</a>
         </div>
     </main>
 
