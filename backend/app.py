@@ -79,18 +79,11 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
     for s in sentences:
         s_clean = s.strip()
         # Filter for reasonable sentence sizes
-        if 35 < len(s_clean) < 220:
+        if 20 < len(s_clean) < 300:
             clean_sentences.append(s_clean)
             
     # Remove duplicates
     clean_sentences = list(dict.fromkeys(clean_sentences))
-    
-    # If we have very few sentences, fallback to default mock
-    if len(clean_sentences) < 3:
-        return None
-        
-    random.shuffle(clean_sentences)
-    questions = []
     
     # Localization for options/explanations
     local_labels = {
@@ -100,82 +93,102 @@ def generate_mock_quiz_from_text(source_text, count, quiz_type, language):
     lang_lower = language.lower()
     labels = local_labels.get(lang_lower, local_labels["english"])
     
-    for sen in clean_sentences:
-        if len(questions) >= count:
-            break
+    questions = []
+    
+    # If we have sentences, generate questions from them
+    if clean_sentences:
+        random.shuffle(clean_sentences)
+        
+        # Iterate and generate questions (multiple passes if count > len(clean_sentences))
+        max_attempts = count * 3
+        attempt = 0
+        sen_idx = 0
+        
+        while len(questions) < count and attempt < max_attempts:
+            attempt += 1
+            sen = clean_sentences[sen_idx % len(clean_sentences)]
+            sen_idx += 1
             
-        current_type = quiz_type
-        if quiz_type == "mixed":
-            current_type = random.choice(["mcq", "true_false"])
-            
-        if current_type == "true_false":
-            # Generate True/False
-            is_true = random.choice([True, False])
-            if is_true:
-                q_text = sen
-                correct = labels["true"]
-                explanation = labels["based_on"] + f"'{sen}'"
-            else:
-                # Simple negation
-                negations = {
-                    "english": ["It is not true that ", "False that: "],
-                    "hindi": ["यह सत्य नहीं है कि ", "यह कथन असत्य है कि "]
-                }
-                neg_prefix = random.choice(negations.get(lang_lower, negations["english"]))
-                q_text = neg_prefix + sen[0].lower() + sen[1:] if lang_lower == "english" else neg_prefix + sen
-                correct = labels["false"]
-                explanation = labels["based_on"] + ("यह कथन बदल दिया गया है।" if lang_lower == "hindi" else "The statement has been negated.")
+            current_type = quiz_type
+            if quiz_type == "mixed":
+                current_type = random.choice(["mcq", "true_false"])
                 
-            questions.append({
-                "question": q_text,
-                "options": [labels["true"], labels["false"]],
-                "correct_answer": correct,
-                "explanation": explanation
-            })
-            
-        else:
-            # Generate MCQ: find a suitable word to blank out (supports Devanagari and Latin letters)
-            if lang_lower == "hindi":
-                words = [w.strip() for w in re.findall(r'[\u0900-\u097F\w]{4,15}', sen) if len(w.strip()) >= 4]
-            else:
-                words = re.findall(r'\b\w{5,15}\b', sen)
-
-            if not words:
-                # Fallback to T/F
+            if current_type == "true_false":
+                # Generate True/False
+                is_true = random.choice([True, False])
+                if is_true:
+                    q_text = sen
+                    correct = labels["true"]
+                    explanation = labels["based_on"] + f"'{sen}'"
+                else:
+                    negations = {
+                        "english": ["It is not true that ", "False that: "],
+                        "hindi": ["यह सत्य नहीं है कि ", "यह कथन असत्य है कि "]
+                    }
+                    neg_prefix = random.choice(negations.get(lang_lower, negations["english"]))
+                    q_text = neg_prefix + sen[0].lower() + sen[1:] if lang_lower == "english" else neg_prefix + sen
+                    correct = labels["false"]
+                    explanation = labels["based_on"] + ("यह कथन बदल दिया गया है।" if lang_lower == "hindi" else "The statement has been negated.")
+                    
                 questions.append({
-                    "question": sen,
+                    "question": q_text,
                     "options": [labels["true"], labels["false"]],
-                    "correct_answer": labels["true"],
-                    "explanation": labels["based_on"] + f"'{sen}'"
+                    "correct_answer": correct,
+                    "explanation": explanation
                 })
-                continue
                 
-            target_word = random.choice(words)
-            q_text = sen.replace(target_word, "_______")
-            
-            # Find distractors from the source text
-            if lang_lower == "hindi":
-                all_words = list(set([w.strip() for w in re.findall(r'[\u0900-\u097F\w]{4,15}', source_text) if len(w.strip()) >= 4 and w.strip().lower() != target_word.lower()]))
             else:
-                all_words = list(set([w for w in re.findall(r'\b\w{5,15}\b', source_text) if w.lower() != target_word.lower()]))
-            
-            if len(all_words) < 3:
-                distractors = ["विकल्प A", "विकल्प B", "विकल्प C"] if lang_lower == "hindi" else ["Option A", "Option B", "Option C"]
-            else:
-                distractors = random.sample(all_words, min(3, len(all_words)))
+                # Generate MCQ: find a suitable word to blank out (supports Devanagari and Latin letters)
+                if lang_lower == "hindi":
+                    words = [w.strip() for w in re.findall(r'[\u0900-\u097F\w]{3,18}', sen) if len(w.strip()) >= 3]
+                else:
+                    words = re.findall(r'\b\w{4,18}\b', sen)
+
+                if not words:
+                    questions.append({
+                        "question": sen,
+                        "options": [labels["true"], labels["false"]],
+                        "correct_answer": labels["true"],
+                        "explanation": labels["based_on"] + f"'{sen}'"
+                    })
+                    continue
+                    
+                target_word = random.choice(words)
+                q_text = sen.replace(target_word, "_______", 1)
                 
-            options = distractors + [target_word]
-            random.shuffle(options)
-            
-            explanation_str = labels["based_on"] + (f"रिक्त स्थान में सही शब्द '{target_word}' आता है: '{sen}'" if lang_lower == "hindi" else f"The blank word is '{target_word}' to complete: '{sen}'.")
-            questions.append({
-                "question": q_text,
-                "options": options,
-                "correct_answer": target_word,
-                "explanation": explanation_str
-            })
-            
-    return questions
+                # Find distractors from the source text
+                if lang_lower == "hindi":
+                    all_words = list(set([w.strip() for w in re.findall(r'[\u0900-\u097F\w]{3,18}', source_text) if len(w.strip()) >= 3 and w.strip().lower() != target_word.lower()]))
+                else:
+                    all_words = list(set([w for w in re.findall(r'\b\w{4,18}\b', source_text) if w.lower() != target_word.lower()]))
+                
+                if len(all_words) < 3:
+                    default_distractors = ["विकल्प 1", "विकल्प 2", "विकल्प 3"] if lang_lower == "hindi" else ["Option A", "Option B", "Option C"]
+                    distractors = default_distractors[:3]
+                else:
+                    distractors = random.sample(all_words, min(3, len(all_words)))
+                    
+                options = distractors + [target_word]
+                random.shuffle(options)
+                
+                explanation_str = labels["based_on"] + (f"रिक्त स्थान में सही शब्द '{target_word}' आता है: '{sen}'" if lang_lower == "hindi" else f"The blank word is '{target_word}' to complete: '{sen}'.")
+                questions.append({
+                    "question": q_text,
+                    "options": options,
+                    "correct_answer": target_word,
+                    "explanation": explanation_str
+                })
+
+    # If still fewer than count, supplement with topic mock questions so count is always fulfilled
+    if len(questions) < count:
+        needed = count - len(questions)
+        supplements = get_mock_quiz("ai" if "ai" in source_text.lower() else "gk", "medium", needed, language, quiz_type)
+        for sq in supplements:
+            questions.append(sq)
+            if len(questions) >= count:
+                break
+                
+    return questions[:count]
 
 # Fallback Mock Quiz Data Generator supporting multi-language and quiz types
 def get_mock_quiz(topic, difficulty, count, language, quiz_type):
@@ -467,16 +480,28 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
                 "true_false": [
                     {"question": "LLM का पूर्ण रूप Large Language Model है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, LLM का पूर्ण रूप Large Language Model होता है।", "difficulty": "easy"},
                     {"question": "आर्टिफिशियल न्यूरल नेटवर्क मानव मस्तिष्क की कार्यप्रणाली से प्रेरित हैं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, कृत्रिम न्यूरॉन्स मानव दिमाग के जैविक न्यूरॉन्स के मॉडल पर आधारित हैं।", "difficulty": "easy"},
+                    {"question": "Generative AI नए प्रकार का टेक्स्ट, चित्र और कोड उत्पन्न कर सकता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, जनरेटिव एआई मॉडल नया और मौलिक कंटेंट बनाने के लिए प्रशिक्षित होते हैं।", "difficulty": "easy"},
                     {"question": "पर्यवेक्षित शिक्षण (Supervised Learning) में डेटा बिना किसी लेबल के होता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "पर्यवेक्षित शिक्षण में लेबल किए गए डेटा (इनपुट और सही आउटपुट) की आवश्यकता होती है।", "difficulty": "medium"},
                     {"question": "डीप लर्निंग (Deep Learning) मशीन लर्निंग का ही एक उपसमूह (Subset) है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "AI के अंदर ML आता है, और ML के अंदर Deep Learning आता है।", "difficulty": "medium"},
-                    {"question": "Transformer आर्किटेक्चर को सबसे पहले 2017 में 'Attention Is All You Need' पेपर में पेश किया गया था।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, गूगल के शोधकर्ताओं ने 2017 में ट्रांसफॉर्मर आर्किटेक्चर पेश किया था।", "difficulty": "hard"}
+                    {"question": "मशीन लर्निंग मॉडल का प्रशिक्षण केवल CPU पर ही संभव है, GPU पर नहीं।", "options": [labels["true"], labels["false"]], "correct_answer": labels["false"], "explanation": "GPU और TPU बड़े मॉडलों के समानांतर प्रशिक्षण के लिए सबसे अधिक उपयोग किए जाते हैं।", "difficulty": "medium"},
+                    {"question": "NLP का पूर्ण रूप Natural Language Processing है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, NLP कंप्यूटर को मानव भाषा समझने और प्रोसेस करने में सक्षम बनाता है।", "difficulty": "easy"},
+                    {"question": "Transformer आर्किटेक्चर को सबसे पहले 2017 में 'Attention Is All You Need' पेपर में पेश किया गया था।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, गूगल के शोधकर्ताओं ने 2017 में ट्रांसफॉर्मर आर्किटेक्चर पेश किया था।", "difficulty": "hard"},
+                    {"question": "Overfitting तब होती है जब मॉडल ट्रेनिंग डेटा पर बहुत अच्छा और नए डेटा पर खराब प्रदर्शन करता है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, ओवरफिटिंग में मॉडल ट्रेनिंग डेटा को रट लेता है जिससे वह नए डेटा पर असफल होता है।", "difficulty": "hard"},
+                    {"question": "कंप्यूटर विज़न में ऑब्जेक्ट डिटेक्शन के लिए YOLO (You Only Look Once) एक प्रसिद्ध मॉडल है।", "options": [labels["true"], labels["false"]], "correct_answer": labels["true"], "explanation": "हाँ, YOLO रियल-टाइम ऑब्जेक्ट डिटेक्शन के लिए अत्यधिक लोकप्रिय है।", "difficulty": "hard"}
                 ],
                 "mcq": [
                     {"question": "AI का पूर्ण रूप क्या है?", "options": ["Artificial Intelligence", "Active Intelligence", "Automated Information", "Advanced Integration"], "correct_answer": "Artificial Intelligence", "explanation": "AI का पूरा नाम Artificial Intelligence (कृत्रिम बुद्धिमत्ता) है।", "difficulty": "easy"},
-                    {"question": "आधुनिक Large Language Models (LLMs) की मुख्य नींव कौन सा आर्किटेक्चर है?", "options": ["Transformer", "CNN", "RNN", "Decision Trees"], "correct_answer": "Transformer", "explanation": "ट्रांसफॉर्मर आर्किटेक्चर और सेल्फ-अटेंशन मेकैनिज्म आधुनिक LLMs का आधार है।", "difficulty": "easy"},
+                    {"question": "आधुनिक Large Language Models (LLMs) की मुख्य नींव कौन सा आर्किटेक्चर है?", "options": ["Transformer", "CNN", "RNN", "Decision Trees"], "correct_answer": "Transformer", "explanation": "ट्रांसफॉर्मर आर्किटेक्चर और 'Self-Attention' मेकैनिज्म आधुनिक LLMs का आधार है।", "difficulty": "easy"},
+                    {"question": "ChatGPT को किस कंपनी ने विकसित किया है?", "options": ["OpenAI", "Google", "Microsoft", "Meta"], "correct_answer": "OpenAI", "explanation": "ChatGPT को OpenAI कंपनी द्वारा विकसित किया गया है।", "difficulty": "easy"},
                     {"question": "कंप्यूटर विज़न में छवियों के वर्गीकरण के लिए सबसे लोकप्रिय न्यूरल नेटवर्क कौन सा है?", "options": ["CNN", "RNN", "ANN", "KNN"], "correct_answer": "CNN", "explanation": "कन्वोल्यूशनल न्यूरल नेटवर्क (CNN) इमेज और वीडियो प्रोसेसिंग के लिए प्रसिद्ध है।", "difficulty": "medium"},
-                    {"question": "ChatGPT को किस कंपनी ने विकसित किया है?", "options": ["OpenAI", "Google", "Microsoft", "Meta"], "correct_answer": "OpenAI", "explanation": "ChatGPT को OpenAI कंपनी द्वारा विकसित किया गया है।", "difficulty": "medium"},
-                    {"question": "Reinforcement Learning में एजेंट पर्यावरण से सीखने के लिए किस पर निर्भर करता है?", "options": ["पुरस्कार और दंड (Rewards & Penalties)", "लेबल किए गए चित्र", "SQL क्वेरी", "मैन्युअल कोडिंग"], "correct_answer": "पुरस्कार और दंड (Rewards & Penalties)", "explanation": "सुदृढ़ीकरण शिक्षण में एजेंट सही कदम पर रिवॉर्ड और गलत कदम पर पेनाल्टी से सीखता है।", "difficulty": "hard"}
+                    {"question": "जब AI मॉडल आत्मविश्वास के साथ गलत या मनगढ़ंत जानकारी देता है, तो इसे क्या कहा जाता है?", "options": ["Hallucination", "Overfitting", "Drifting", "Gradient Descent"], "correct_answer": "Hallucination", "explanation": "एआई द्वारा गलत तथ्य प्रस्तुत करने को Hallucination कहा जाता है।", "difficulty": "medium"},
+                    {"question": "Reinforcement Learning में एजेंट पर्यावरण से सीखने के लिए किस पर निर्भर करता है?", "options": ["पुरस्कार और दंड (Rewards & Penalties)", "लेबल किए गए चित्र", "SQL क्वेरी", "मैन्युअल कोडिंग"], "correct_answer": "पुरस्कार और दंड (Rewards & Penalties)", "explanation": "सुदृढ़ीकरण शिक्षण में एजेंट सही कदम पर रिवॉर्ड और गलत कदम पर पेनाल्टी से सीखता है।", "difficulty": "medium"},
+                    {"question": "Python में मशीन लर्निंग और डीप लर्निंग के लिए सबसे लोकप्रिय लाइब्रेरी कौन सी है?", "options": ["PyTorch / TensorFlow", "Tkinter", "Flask", "BeautifulSoup"], "correct_answer": "PyTorch / TensorFlow", "explanation": "PyTorch और TensorFlow डीप लर्निंग मॉडल बनाने के प्रमुख फ्रेमवर्क हैं।", "difficulty": "medium"},
+                    {"question": "AI मॉडल में प्रॉम्ट को बेहतर बनाकर सटीक उत्तर प्राप्त करने की कला को क्या कहते हैं?", "options": ["Prompt Engineering", "Feature Scaling", "Data Normalization", "Web Scraping"], "correct_answer": "Prompt Engineering", "explanation": "प्रॉम्प्ट इंजीनियरिंग एआई से सर्वश्रेष्ठ परिणाम प्राप्त करने के लिए निर्देश तैयार करने की कला है।", "difficulty": "easy"},
+                    {"question": "Google द्वारा विकसित प्रमुख AI मॉडल परिवार का नाम क्या है?", "options": ["Gemini", "Claude", "LLaMA", "DeepSeek"], "correct_answer": "Gemini", "explanation": "Gemini गूगल का अत्याधुनिक मल्टीमॉडल AI मॉडल परिवार है।", "difficulty": "easy"},
+                    {"question": "न्यूरल नेटवर्क में वेट्स (Weights) को अपडेट करने के लिए कौन सा ऑप्टिमाइज़र सबसे व्यापक रूप से उपयोग होता है?", "options": ["Adam", "Linear Search", "Bubble Sort", "Dijkstra"], "correct_answer": "Adam", "explanation": "Adam (Adaptive Moment Estimation) ग्रेडिएंट आधारित सबसे लोकप्रिय ऑप्टिमाइज़र है।", "difficulty": "hard"},
+                    {"question": "RAG का पूर्ण रूप AI और LLM शब्दावली में क्या है?", "options": ["Retrieval-Augmented Generation", "Random Auto Generator", "Recursive Action Graph", "Rapid Analysis Grid"], "correct_answer": "Retrieval-Augmented Generation", "explanation": "RAG बाहरी डेटाबेस से प्रासंगिक जानकारी खोजकर LLM को सटीक उत्तर देने में सक्षम बनाता है।", "difficulty": "hard"},
+                    {"question": "मशीन लर्निंग मॉडल में 'Epoch' शब्द का क्या अर्थ है?", "options": ["पूरे ट्रेनिंग डेटासेट का एक पूरा चक्कर", "एक समय में प्रोसेस होने वाले डेटा का आकार", "लर्निंग रेट का मान", "एरर का प्रतिशत"], "correct_answer": "पूरे ट्रेनिंग डेटासेट का एक पूरा चक्कर", "explanation": "एक Epoch का अर्थ है जब पूरा डेटासेट एक बार न्यूरल नेटवर्क से आगे और पीछे गुजरता है।", "difficulty": "hard"}
                 ]
             },
             "tech": {
@@ -645,17 +670,98 @@ def get_mock_quiz(topic, difficulty, count, language, quiz_type):
         
     return output_questions
 
-def sanitize_and_validate_questions(questions, language="English", quiz_type="mcq", target_count=5):
+def robust_json_extract_and_parse(raw_text):
+    """
+    Extracts and parses JSON from LLM output (Gemini / Groq / OpenAI),
+    handling markdown fences, unescaped quotes, smart quotes, and partial outputs.
+    """
+    import json
+    import re
+    
+    if not raw_text or not isinstance(raw_text, str):
+        return []
+        
+    cleaned = raw_text.strip()
+    
+    # Strip markdown code blocks if present
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r'^```(?:json)?\s*', '', cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r'\s*```$', '', cleaned)
+    cleaned = cleaned.strip()
+    
+    # Replace smart quotes that break JSON parsing
+    cleaned = cleaned.replace('“', '"').replace('”', '"').replace('‘', "'").replace('’', "'")
+    
+    # Try standard json parse first
+    try:
+        data = json.loads(cleaned)
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            for key in ["questions", "quiz", "data", "items", "results", "questions_list"]:
+                if key in data and isinstance(data[key], list):
+                    return data[key]
+            # If dict itself has question key
+            if "question" in data:
+                return [data]
+    except Exception:
+        pass
+        
+    # Attempt to extract JSON array substring
+    array_match = re.search(r'\[\s*\{.*\}\s*\]', cleaned, re.DOTALL)
+    if array_match:
+        try:
+            data = json.loads(array_match.group(0))
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+
+    # Attempt to extract JSON object substring with questions
+    obj_match = re.search(r'\{\s*"questions"\s*:\s*\[.*\]\s*\}', cleaned, re.DOTALL)
+    if obj_match:
+        try:
+            data = json.loads(obj_match.group(0))
+            if isinstance(data, dict) and "questions" in data and isinstance(data["questions"], list):
+                return data["questions"]
+        except Exception:
+            pass
+
+    # Regex extraction of individual question objects as fallback
+    extracted_qs = []
+    # Match patterns like {"question": "...", ...}
+    pattern = re.compile(r'\{\s*"question"\s*:\s*"(?:\\.|[^"\\])*"(?:[^{}]|"(?:\\.|[^"\\])*")*\}', re.DOTALL)
+    matches = pattern.findall(cleaned)
+    for m in matches:
+        try:
+            item = json.loads(m)
+            if isinstance(item, dict) and "question" in item:
+                extracted_qs.append(item)
+        except Exception:
+            # Try cleaning trailing commas
+            m_fixed = re.sub(r',\s*([\}\]])', r'\1', m)
+            try:
+                item = json.loads(m_fixed)
+                if isinstance(item, dict) and "question" in item:
+                    extracted_qs.append(item)
+            except Exception:
+                continue
+
+    return extracted_qs
+
+def sanitize_and_validate_questions(questions, language="English", quiz_type="mcq", target_count=5, topic="General Knowledge", difficulty="medium"):
     """
     Sanitizes questions returned by AI models or mock generators:
-    - Strips option markers like 'A. ', 'B) ', '1. ', 'क. '
-    - Resolves single letter/index correct_answers ('A', 'B', '1', 'क') to actual option strings
+    - Strips option markers like 'A. ', 'B) ', '1. ', 'क. ', '१. '
+    - Normalizes dict / list option formats
+    - Resolves single letter/index correct_answers ('A', 'B', '1', 'क', '१') to actual option strings
     - Ensures correct_answer strictly matches an item in options
     - Normalizes True/False options and answers to exact language labels
+    - Guarantees full target_count questions by supplementing if needed
     """
     import re
     if not questions or not isinstance(questions, list):
-        return []
+        questions = []
     
     is_hindi = language.lower() == "hindi"
     t_label = "सत्य" if is_hindi else "True"
@@ -664,13 +770,23 @@ def sanitize_and_validate_questions(questions, language="English", quiz_type="mc
     letter_map = {
         "a": 0, "b": 1, "c": 2, "d": 3, "e": 4,
         "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
-        "क": 0, "ख": 1, "ग": 2, "घ": 3,
+        "१": 0, "२": 1, "३": 2, "४": 3, "५": 4,
+        "क": 0, "ख": 1, "ग": 2, "घ": 3, "ङ": 4,
+        "(a)": 0, "(b)": 1, "(c)": 2, "(d)": 3,
+        "(1)": 0, "(2)": 1, "(3)": 2, "(4)": 3,
+        "(१)": 0, "(२)": 1, "(३)": 2, "(४)": 3,
+        "(क)": 0, "(ख)": 1, "(ग)": 2, "(घ)": 3,
         "option a": 0, "option b": 1, "option c": 2, "option d": 3,
         "option 1": 0, "option 2": 1, "option 3": 2, "option 4": 3,
+        "option १": 0, "option २": 1, "option ३": 2, "option ४": 3,
         "विकल्प a": 0, "विकल्प b": 1, "विकल्प c": 2, "विकल्प d": 3,
         "विकल्प 1": 0, "विकल्प 2": 1, "विकल्प 3": 2, "विकल्प 4": 3,
+        "विकल्प १": 0, "विकल्प २": 1, "विकल्प ३": 2, "विकल्प ४": 3,
         "विकल्प क": 0, "विकल्प ख": 1, "विकल्प ग": 2, "विकल्प घ": 3,
         "उत्तर a": 0, "उत्तर b": 1, "उत्तर c": 2, "उत्तर d": 3,
+        "उत्तर 1": 0, "उत्तर 2": 1, "उत्तर 3": 2, "उत्तर 4": 3,
+        "उत्तर १": 0, "उत्तर २": 1, "उत्तर ३": 2, "उत्तर ४": 3,
+        "उत्तर क": 0, "उत्तर ख": 1, "उत्तर ग": 2, "उत्तर घ": 3,
     }
 
     clean_questions = []
@@ -679,19 +795,35 @@ def sanitize_and_validate_questions(questions, language="English", quiz_type="mc
             continue
         q_text = str(item.get("question", "")).strip()
         raw_options = item.get("options", [])
+        
+        # Handle options if provided as a dict (e.g. {"A": "...", "B": "..."})
+        if isinstance(raw_options, dict):
+            raw_options = list(raw_options.values())
+        elif isinstance(raw_options, list):
+            # Handle list of dicts: [{"text": "..."}, ...]
+            parsed_opts = []
+            for ro in raw_options:
+                if isinstance(ro, dict):
+                    parsed_opts.append(ro.get("text", ro.get("option", str(ro))))
+                else:
+                    parsed_opts.append(str(ro))
+            raw_options = parsed_opts
+            
         raw_correct = str(item.get("correct_answer", "")).strip()
         raw_explanation = str(item.get("explanation", "")).strip()
-        diff = item.get("difficulty", "medium")
+        diff = item.get("difficulty", difficulty or "medium")
 
-        if not q_text or not raw_options:
+        if not q_text:
             continue
 
-        # Clean options: remove prefixes like "A. ", "A) ", "(A) ", "1. ", "क. ", "ख) "
+        # Clean options: remove prefixes like "A. ", "A) ", "(A) ", "1. ", "क. ", "१. ", "विकल्प 1: "
+        prefix_pattern = r'^(?:(?:[\(\[]?[A-Ea-e1-5क-ङ१-५][\.\)\-\]:]|\([A-Ea-e1-5क-ङ१-५]\)|\[[A-Ea-e1-5क-ङ१-५]\])\s*|\b(?:option|विकल्प|उत्तर)\s+[A-Ea-e1-5क-ङ१-५]?\s*[:\.\-]?\s*)'
         cleaned_opts = []
-        for opt in raw_options:
-            s_opt = str(opt).strip()
-            s_opt_clean = re.sub(r'^(?:[\(\[]?[A-Da-d1-4कखगघ][\.\)\-\]]\s*|\b(?:option|विकल्प)\s+[A-Da-d1-4कखगघ]\s*[:\.\-]?\s*)', '', s_opt, flags=re.IGNORECASE).strip()
-            cleaned_opts.append(s_opt_clean if s_opt_clean else s_opt)
+        if isinstance(raw_options, list):
+            for opt in raw_options:
+                s_opt = str(opt).strip()
+                s_opt_clean = re.sub(prefix_pattern, '', s_opt, flags=re.IGNORECASE).strip()
+                cleaned_opts.append(s_opt_clean if s_opt_clean else s_opt)
 
         # Detect question type (True/False vs MCQ)
         is_tf = (quiz_type == "true_false") or len(cleaned_opts) == 2
@@ -700,20 +832,27 @@ def sanitize_and_validate_questions(questions, language="English", quiz_type="mc
             # Normalize True/False options and correct_answer
             cleaned_opts = [t_label, f_label]
             lower_correct = raw_correct.lower().strip()
-            if any(w in lower_correct for w in ["true", "सत्य", "सही", "सच्चा"]):
+            if any(w in lower_correct for w in ["true", "सत्य", "सही", "सच्चा", "satya", "sahi"]):
                 raw_correct = t_label
-            elif any(w in lower_correct for w in ["false", "असत्य", "गलत", "झूठा"]):
+            elif any(w in lower_correct for w in ["false", "असत्य", "गलत", "झूठा", "asatya", "galat"]):
                 raw_correct = f_label
             else:
                 raw_correct = t_label
         else:
+            # Ensure at least 4 options for MCQ
+            if len(cleaned_opts) < 4:
+                default_distractors = ["विकल्प A", "विकल्प B", "विकल्प C", "विकल्प D"] if is_hindi else ["Option A", "Option B", "Option C", "Option D"]
+                for d in default_distractors:
+                    if d not in cleaned_opts and len(cleaned_opts) < 4:
+                        cleaned_opts.append(d)
+                        
             # Handle correct_answer mapping for MCQ
-            clean_correct_lookup = re.sub(r'[\.\)\-\]]', '', raw_correct).strip().lower()
+            clean_correct_lookup = re.sub(r'[\.\)\-\]:\s]', '', raw_correct).strip().lower()
             if clean_correct_lookup in letter_map and letter_map[clean_correct_lookup] < len(cleaned_opts):
                 raw_correct = cleaned_opts[letter_map[clean_correct_lookup]]
             else:
                 # Strip prefix from correct_answer if present
-                clean_ans = re.sub(r'^(?:[\(\[]?[A-Da-d1-4कखगघ][\.\)\-\]]\s*|\b(?:option|विकल्प)\s+[A-Da-d1-4कखगघ]\s*[:\.\-]?\s*)', '', raw_correct, flags=re.IGNORECASE).strip()
+                clean_ans = re.sub(prefix_pattern, '', raw_correct, flags=re.IGNORECASE).strip()
                 # Try exact match with cleaned_opts
                 matched = False
                 for opt in cleaned_opts:
@@ -743,6 +882,23 @@ def sanitize_and_validate_questions(questions, language="English", quiz_type="mc
             "difficulty": diff
         })
 
+    # If we have fewer than target_count, supplement from mock database so user ALWAYS gets requested count (e.g. 10)
+    if len(clean_questions) < target_count:
+        needed = target_count - len(clean_questions)
+        supplements = get_mock_quiz(topic, difficulty, needed * 2, language, quiz_type)
+        existing_texts = set(q["question"].strip().lower() for q in clean_questions)
+        for sq in supplements:
+            if sq["question"].strip().lower() not in existing_texts:
+                clean_questions.append(sq)
+                existing_texts.add(sq["question"].strip().lower())
+                if len(clean_questions) >= target_count:
+                    break
+        # If still short, cycle existing questions
+        idx = 0
+        while len(clean_questions) < target_count and len(clean_questions) > 0:
+            clean_questions.append(clean_questions[idx % len(clean_questions)])
+            idx += 1
+
     return clean_questions[:target_count]
 
 def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source_text):
@@ -765,7 +921,7 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
 
     prompt = f"""
     You are a professional quiz maker and expert educator. Generate a custom quiz.
-    The quiz should have exactly {count} questions at a "{difficulty}" difficulty level.
+    The quiz MUST have exactly {count} distinct questions at a "{difficulty}" difficulty level.
     
     Language constraints:
     - The entire JSON payload (including question text, option choices, and explanations) MUST be written in "{language}". Do not translate technical keywords if they are commonly understood in English (e.g., variable names, functions like print()), but write the description and options in the chosen language "{language}".
@@ -774,19 +930,19 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
     - {type_instruction}
     
     STRICT Rules for options and correct_answer:
-    - "options": Must be a JSON array of strings containing ONLY the answer choices. DO NOT include prefixes like "A.", "B.", "1.", "क." inside the option strings. Example: ["विकल्प 1", "विकल्प 2", "विकल्प 3", "विकल्प 4"].
+    - "options": Must be a JSON array of strings containing ONLY the answer choices. DO NOT include prefixes like "A.", "B.", "1.", "क.", "१." inside the option strings. Example: ["विकल्प 1", "विकल्प 2", "विकल्प 3", "विकल्प 4"].
     - "correct_answer": MUST be the exact matching string from the "options" array. NEVER return "A", "B", "C", "D" or an index.
     
     Output Format:
-    You must return a valid JSON object containing a single key "questions" which is a list of question objects.
+    You must return a valid JSON object containing a single key "questions" which is a list of exactly {count} question objects.
     Example schema:
     {{
       "questions": [
         {{
           "question": "The question text in {language}?",
-          "options": ["Option 1", "Option 2", ...],
-          "correct_answer": "The exact string corresponding to the correct answer (must match one of the items in options exactly)",
-          "explanation": "A short, helpful explanation of why this answer is correct and why the other choices are incorrect, written in {language}."
+          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+          "correct_answer": "Option 1",
+          "explanation": "A short, helpful explanation of why this answer is correct in {language}."
         }}
       ]
     }}
@@ -795,7 +951,7 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
     if source_text:
         prompt += f"""
         Source text constraints:
-        - You MUST generate these questions based ONLY on the contents of the text provided below.
+        - You MUST generate these {count} questions based ONLY on the contents of the text provided below.
         - Do not use external knowledge or invent facts outside this text:
         ---
         {source_text[:12000]}
@@ -808,11 +964,17 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
         """
 
     # Active and verified models on Groq
-    models_to_try = ["qwen/qwen3.8-27b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound-mini"]
+    models_to_try = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "gemma2-9b-it",
+        "mixtral-8x7b-32768",
+        "llama3-70b-8192",
+        "llama3-8b-8192"
+    ]
     import urllib.request
     import urllib.error
     import json
-    import re
 
     for model in models_to_try:
         payload = {
@@ -822,7 +984,7 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
             ],
             "response_format": {"type": "json_object"},
             "temperature": 0.3,
-            "max_tokens": 4096
+            "max_tokens": 8192
         }
         try:
             req = urllib.request.Request(
@@ -838,20 +1000,12 @@ def generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source
             with urllib.request.urlopen(req, timeout=30) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 content = res_data['choices'][0]['message']['content'].strip()
-                # Clean markdown code blocks if present
-                if content.startswith("```"):
-                    content = re.sub(r'^```(?:json)?\s*', '', content, flags=re.IGNORECASE)
-                    content = re.sub(r'\s*```$', '', content)
-                content = content.strip()
-                quiz_data = json.loads(content)
-                raw_qs = []
-                if isinstance(quiz_data, dict) and "questions" in quiz_data:
-                    raw_qs = quiz_data["questions"]
-                elif isinstance(quiz_data, list):
-                    raw_qs = quiz_data
+                raw_qs = robust_json_extract_and_parse(content)
                 if raw_qs:
-                    sanitized = sanitize_and_validate_questions(raw_qs, language, quiz_type, count)
-                    if sanitized:
+                    sanitized = sanitize_and_validate_questions(raw_qs, language, quiz_type, count, topic=topic, difficulty=difficulty)
+                    if sanitized and len(sanitized) >= count:
+                        return sanitized[:count]
+                    elif sanitized:
                         return sanitized
         except Exception as e:
             logging.warning(f"Groq generation failed with model {model}: {e}")
@@ -931,12 +1085,12 @@ def generate_quiz():
 
     # Try Groq first if configured
     groq_questions = generate_quiz_via_groq(topic, difficulty, count, language, quiz_type, source_text)
-    if groq_questions:
+    if groq_questions and len(groq_questions) >= count:
         logging.info(f"Quiz successfully generated using Groq API (Llama 3) in {language}.")
         return jsonify({
              "success": True,
              "mode": "groq",
-             "questions": groq_questions
+             "questions": groq_questions[:count]
         })
 
     # Prompt Engineering for Google Gemini
@@ -958,7 +1112,7 @@ def generate_quiz():
 
             prompt = f"""
             You are a professional quiz maker and expert educator. Generate a custom quiz.
-            The quiz should have exactly {count} questions at a "{difficulty}" difficulty level.
+            The quiz MUST have exactly {count} questions at a "{difficulty}" difficulty level.
             
             Language constraints:
             - The entire JSON payload (including question text, option choices, and explanations) MUST be written in "{language}". Do not translate technical keywords if they are commonly understood in English (e.g., variable names, functions like print()), but write the description and options in the chosen language "{language}".
@@ -967,24 +1121,23 @@ def generate_quiz():
             - {type_instruction}
             
             JSON Escaping Rule:
-            - CRITICAL: You must escape all inner double quotes inside the string values (e.g., in the question, option list items, or explanations) using a backslash (\\\"). Do not use unescaped raw double quotes inside strings, as this will break JSON parsing.
+            - CRITICAL: You must escape all inner double quotes inside the string values using a backslash (\\\"). Do not use unescaped raw double quotes inside strings.
             
             Output Format:
-            You must return a valid JSON array of objects. Do NOT wrap the JSON in markdown blocks (do NOT use ```json ... ```).
+            You must return a valid JSON array of exactly {count} objects or a JSON object with a "questions" list key.
             Each object in the array must follow this schema:
             {{
               "question": "The question text in {language}?",
-              "options": ["Option 1", "Option 2", ...],
-              "correct_answer": "The exact string corresponding to the correct answer (must match one of the items in options exactly)",
-              "explanation": "A short, helpful explanation of why this answer is correct and why the other choices are incorrect, written in {language}."
+              "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+              "correct_answer": "Option 1",
+              "explanation": "A short, helpful explanation in {language}."
             }}
             """
 
             if source_text:
                 prompt += f"""
                 Source text constraints:
-                - You MUST generate these questions based ONLY on the contents of the text provided below.
-                - Do not use external knowledge or invent facts outside this text:
+                - You MUST generate these {count} questions based ONLY on the contents of the text provided below:
                 ---
                 {source_text[:12000]}
                 ---
@@ -1006,45 +1159,20 @@ def generate_quiz():
                 }
             )
             
-            # Parse JSON safely
-            quiz_data = None
-            raw_text = response.text.strip()
+            raw_text = response.text.strip() if response and response.text else ""
+            quiz_data = robust_json_extract_and_parse(raw_text)
             
-            # Auto-repair truncated JSON array if needed
-            if raw_text.startswith("[") and not raw_text.endswith("]"):
-                logging.warning("Detected truncated JSON array from Gemini. Attempting auto-repair.")
-                if raw_text.endswith(","):
-                    raw_text = raw_text[:-1]
-                raw_text += "]"
-                
-            try:
-                quiz_data = json.loads(raw_text)
-            except json.JSONDecodeError as jde:
-                logging.warning(f"Initial JSON parse failed: {jde}. Attempting robust markdown block strip.")
-                # Strip markdown blocks if present
-                if raw_text.startswith("```"):
-                    lines = raw_text.splitlines()
-                    if lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines and lines[-1].strip() == "```":
-                        lines = lines[:-1]
-                    raw_text = "\n".join(lines).strip()
-                try:
-                    quiz_data = json.loads(raw_text)
-                except json.JSONDecodeError as jde2:
-                    logging.error(f"Failed to parse JSON. Raw response from Gemini: {response.text}")
-                    raise jde2
-            
-            if isinstance(quiz_data, list) and len(quiz_data) > 0:
-                sanitized_gemini = sanitize_and_validate_questions(quiz_data, language, quiz_type, count)
-                logging.info(f"Quiz successfully generated using Gemini API in {language}.")
-                return jsonify({
-                     "success": True,
-                     "mode": "gemini",
-                     "questions": sanitized_gemini if sanitized_gemini else quiz_data
-                })
+            if quiz_data and len(quiz_data) > 0:
+                sanitized_gemini = sanitize_and_validate_questions(quiz_data, language, quiz_type, count, topic=topic, difficulty=difficulty)
+                if sanitized_gemini:
+                    logging.info(f"Quiz successfully generated using Gemini API in {language}.")
+                    return jsonify({
+                         "success": True,
+                         "mode": "gemini",
+                         "questions": sanitized_gemini[:count]
+                    })
             else:
-                logging.error("Gemini response was not a valid list. Falling back to mock data.")
+                logging.error("Gemini response was empty or could not be parsed. Falling back to mock data.")
         except Exception as e:
             logging.error(f"Error during Gemini generation: {e}. Falling back to mock data.")
             
@@ -1057,16 +1185,16 @@ def generate_quiz():
         mock_questions = generate_mock_quiz_from_text(source_text, count, quiz_type, language)
         if mock_questions:
             mode = "document_fallback"
-            msg = "Generated mock quiz dynamically from the uploaded document text (Gemini API Key missing/failed)."
+            msg = "Generated mock quiz dynamically from the uploaded document text."
             
     if not mock_questions:
         mock_questions = get_mock_quiz(topic, difficulty, count, language, quiz_type)
         
-    sanitized_mock = sanitize_and_validate_questions(mock_questions, language, quiz_type, count)
+    sanitized_mock = sanitize_and_validate_questions(mock_questions, language, quiz_type, count, topic=topic, difficulty=difficulty)
     return jsonify({
         "success": True,
         "mode": mode,
-        "questions": sanitized_mock if sanitized_mock else mock_questions,
+        "questions": sanitized_mock[:count] if sanitized_mock else mock_questions[:count],
         "message": msg
     })
 
