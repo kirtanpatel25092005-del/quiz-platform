@@ -691,9 +691,7 @@ function resetTimer() {
 
 // Timeout
 function handleTimeOut() {
-    disableOptions();
     const question = quizQuestions[currentQuestionIndex];
-    highlightCorrectOption(question.correct_answer);
     
     userAnswers[currentQuestionIndex] = {
         question: question.question,
@@ -703,8 +701,7 @@ function handleTimeOut() {
         explanation: question.explanation
     };
 
-    showExplanation(question.explanation);
-    showNextButton();
+    handleNextQuestion();
 }
 
 // Option click
